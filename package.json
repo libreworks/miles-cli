@@ -1,0 +1,30 @@
+{
+  "name": "miles-cli",
+  "version": "0.1.0",
+  "description": "Command line utility to interact with Miles URL Monitor",
+  "main": "index.js",
+  "bin": {
+      "miles": "bin/miles.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/libreworks/miles-cli.git"
+  },
+  "keywords": [
+    "miles"
+  ],
+  "contributors": [
+      {
+          "name": "LibreWorks Contributors",
+          "homepage": "https://github.com/libreworks/miles-cli/contributors"
+      }
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/libreworks/miles-cli/issues"
+  },
+  "homepage": "https://github.com/libreworks/miles-cli"
+}
