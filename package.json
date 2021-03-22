@@ -4,10 +4,13 @@
   "description": "Command line utility to interact with Miles URL Monitor",
   "main": "index.js",
   "bin": {
-      "miles": "bin/miles.js"
+    "miles": "bin/miles.js"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "eslint .",
+    "test": "mocha --async-only --timeout 5000 test test",
+    "cover": "nyc --reporter=lcov --reporter=text-summary npm test",
+    "coveralls": "nyc --reporter=text-lcov npm test | coveralls"
   },
   "repository": {
     "type": "git",
@@ -17,14 +20,20 @@
     "miles"
   ],
   "contributors": [
-      {
-          "name": "LibreWorks Contributors",
-          "homepage": "https://github.com/libreworks/miles-cli/contributors"
-      }
+    {
+      "name": "LibreWorks Contributors",
+      "homepage": "https://github.com/libreworks/miles-cli/contributors"
+    }
   ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/libreworks/miles-cli/issues"
   },
-  "homepage": "https://github.com/libreworks/miles-cli"
+  "homepage": "https://github.com/libreworks/miles-cli",
+  "devDependencies": {
+    "coveralls": "^3.0.3",
+    "eslint": "^2.13.1",
+    "mocha": "^3.2.0",
+    "nyc": "^13.3.0"
+  }
 }
