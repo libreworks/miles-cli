@@ -16,6 +16,9 @@
     "type": "git",
     "url": "https://github.com/libreworks/miles-cli.git"
   },
+  "engines": {
+    "node": ">=8"
+  },
   "keywords": [
     "miles"
   ],
