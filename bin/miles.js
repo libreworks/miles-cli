@@ -1,5 +1,12 @@
 #!/usr/bin/env node
 
-const miles = require('../');
+const package = require('../package.json');
+const { Command } = require('commander');
 
-miles.version();
+const program = new Command();
+program.version(package.version);
+
+const miles = require('../');
+miles.addCommands(program);
+
+program.parse();
