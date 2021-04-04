@@ -1,7 +1,14 @@
-const config = require('./lib/config');
+const xdg = require('@folder/xdg');
+const Config = require('./lib/config');
+const Yaml = require('./lib/yaml');
 
-const miles = {
-    addCommands: function (program) {
+class Miles {
+    /**
+     * Registers the commands with Commander.
+     *
+     * @param {commander.Command}
+     */
+    addCommands(program) {
         let nestedCommand = program.command('config');
         nestedCommand.command('get <namespace> <key>')
             .description('gets a configuration value')
@@ -20,6 +27,12 @@ const miles = {
                 await storage.write(values.export());
             });
     }
-};
 
-module.exports = miles;
+    loadConfiguration() {
+        const configDir = process.env.MILES_CONFIG_DIR || xdg({'subdir': 'miles'}).config;
+        const yaml = new Yaml(configDir);
+        this.config = new Config(yaml.read());
+    }
+}
+
+module.exports = Miles;
