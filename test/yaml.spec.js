@@ -11,7 +11,7 @@ describe('Yaml', function() {
       const { path: fpath, fd, cleanup } = await tmp.file();
       try {
         const obj = new Yaml(fpath);
-        assert.strictEqual(obj.directory, path.dirname(fpath));
+        assert.strictEqual(obj.filename, fpath);
       } finally {
         await cleanup();
       }
