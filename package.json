@@ -8,7 +8,7 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "test": "mocha --async-only --timeout 5000 test test",
+    "test": "mocha --async-only --recursive --timeout 5000 test test",
     "cover": "nyc --reporter=lcov --reporter=text-summary npm test",
     "coveralls": "nyc --reporter=text-lcov npm test | coveralls"
   },
@@ -38,6 +38,7 @@
     "eslint": "^2.13.1",
     "mocha": "^3.2.0",
     "nyc": "^13.3.0",
+    "sinon": "^10.0.0",
     "tmp-promise": "^3.0.2"
   },
   "dependencies": {

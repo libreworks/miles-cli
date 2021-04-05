@@ -5,15 +5,6 @@ const Yaml = require('./lib/yaml');
 const ConfigCommand = require('./lib/commands/config');
 
 /**
- * Gets the configuration directory according to the environment and OS.
- *
- * @return {string} - The directory name.
- */
-function getEnvConfigDir() {
-  return process.env.MILES_CONFIG_DIR || xdg({'subdir': 'miles'}).config;
-};
-
-/**
  * The whole shebang.
  */
 class Miles {
@@ -21,11 +12,21 @@ class Miles {
   /**
    * Create a new Miles instance.
    *
-   * @param {commander.Command} - The Commander object.
+   * @param {commander.Command} program - The Commander object.
+   * @param {string} [configDir] - Configuration directory.
    */
-  constructor(program) {
+  constructor(program, configDir) {
     this.program = program;
-    this.configDir = path.normalize(getEnvConfigDir());
+    this.configDir = path.normalize(configDir || Miles.getDefaultConfigDir());
+  }
+
+  /**
+   * Gets the configuration directory according to the operating system.
+   *
+   * @return {string} - The directory name.
+   */
+  static getDefaultConfigDir() {
+    return xdg({'subdir': 'miles'}).config;
   }
 
   /**
