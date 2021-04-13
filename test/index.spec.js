@@ -56,6 +56,15 @@ describe("Miles", function () {
       assert.strictEqual(typeof Miles.prototype.addCommands, "function");
     });
   });
+  describe("#addGlobalOptions", function () {
+    it("should invoke Commander", async function () {
+      const program = sinon.createStubInstance(Command);
+      program.option.returnsThis();
+      const object = new Miles(program);
+      object.addGlobalOptions();
+      assert.strictEqual(program.option.callCount, 1);
+    });
+  });
   describe("#start", function () {
     it("should call other methods", async function () {
       const { path: fpath, cleanup } = await tmp.dir({
@@ -67,9 +76,13 @@ describe("Miles", function () {
         const mock = sinon.mock(object);
         const meth1 = mock.expects("loadConfig").once();
         const meth2 = mock.expects("addCommands").once();
+        const meth3 = mock.expects("loadLogger").once();
+        const meth4 = mock.expects("addGlobalOptions").once();
         await object.start();
         meth1.verify();
         meth2.verify();
+        meth3.verify();
+        meth4.verify();
       } finally {
         await cleanup();
       }

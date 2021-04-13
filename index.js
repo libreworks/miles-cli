@@ -1,5 +1,6 @@
 const path = require("path");
 const xdg = require("@folder/xdg");
+const winston = require("winston");
 const Config = require("./lib/config");
 const Yaml = require("./lib/yaml");
 const ConfigCommand = require("./lib/commands/config");
@@ -32,8 +33,46 @@ class Miles {
    * The journey of a thousand miles begins with a single step.
    */
   async start() {
+    this.addGlobalOptions();
+    this.loadLogger();
     await this.loadConfig();
     this.addCommands();
+  }
+
+  /**
+   * Loads the logger.
+   *
+   * We need to parse the verbosity so we can provide it to the logger.
+   */
+  loadLogger() {
+    this.program.parse();
+    const levels = winston.config.syslog.levels;
+    const levelNames = Object.keys(levels);
+    this.logTransports = [
+      new winston.transports.Console({
+        format: winston.format.simple(),
+        stderrLevels: levelNames,
+      }),
+    ];
+    this.logger = winston.createLogger({
+      levels: levels,
+      level: levelNames.find(
+        (key) => levels[key] === this.program.opts().verbose
+      ),
+      transports: this.logTransports,
+    });
+  }
+
+  /**
+   * Adds global options to Commander.
+   */
+  addGlobalOptions() {
+    this.program.option(
+      "-v, --verbose",
+      "Increases the log level. You can increase verbosity up to three times.",
+      (dummy, previous) => previous + 1,
+      4
+    );
   }
 
   /**
