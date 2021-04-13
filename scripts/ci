@@ -1,0 +1,11 @@
+#!/bin/bash
+
+
+npm run lint
+
+node_version=$(node -v)
+if [[ "$node_version" =~ ^v[^8]+\..* ]]; then
+  npm run prettier-ci
+fi
+
+npm test
