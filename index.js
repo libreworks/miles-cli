@@ -1,14 +1,13 @@
-const path = require('path');
-const xdg = require('@folder/xdg');
-const Config = require('./lib/config');
-const Yaml = require('./lib/yaml');
-const ConfigCommand = require('./lib/commands/config');
+const path = require("path");
+const xdg = require("@folder/xdg");
+const Config = require("./lib/config");
+const Yaml = require("./lib/yaml");
+const ConfigCommand = require("./lib/commands/config");
 
 /**
  * The whole shebang.
  */
 class Miles {
-
   /**
    * Create a new Miles instance.
    *
@@ -26,7 +25,7 @@ class Miles {
    * @return {string} - The directory name.
    */
   static getDefaultConfigDir() {
-    return xdg({'subdir': 'miles'}).config;
+    return xdg({ subdir: "miles" }).config;
   }
 
   /**
@@ -41,7 +40,7 @@ class Miles {
    * Sets up the configuration system.
    */
   async loadConfig() {
-    this.configStorage = new Yaml(path.join(this.configDir, 'config.yaml'));
+    this.configStorage = new Yaml(path.join(this.configDir, "config.yaml"));
     this.config = new Config(await this.configStorage.read());
   }
 
@@ -50,7 +49,8 @@ class Miles {
    */
   addCommands() {
     const commands = [ConfigCommand];
-    commands.map((clz) => new clz(this))
+    commands
+      .map((clz) => new clz(this))
       .forEach((cmd) => cmd.addCommands(this.program));
   }
 }

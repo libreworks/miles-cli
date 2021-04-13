@@ -5,9 +5,13 @@ node_js:
   - "12"
   - "10"
   - "8"
+script:
+  - npm run lint
+  - npm run prettier-ci
+  - npm test
 after_script:
   - if [ $(echo "${TRAVIS_NODE_VERSION}" | cut -d'.' -f1) -ge 6 ]; then
-      npm run coveralls;
+    npm run coveralls;
     fi
 
 git:
