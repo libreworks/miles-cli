@@ -23,9 +23,9 @@ describe("Miles", function () {
       try {
         const program = sinon.createStubInstance(Command);
         const object = new Miles(program);
-        let logstub = {debug: function () {}};
+        let logstub = { debug: function () {} };
         object.logger = logstub;
-        const logspy = sinon.spy(logstub, 'debug');
+        const logspy = sinon.spy(logstub, "debug");
         await object.loadConfig();
         assert.ok(object.config instanceof Config);
         assert.ok(logspy.calledTwice);
@@ -40,9 +40,9 @@ describe("Miles", function () {
       try {
         const program = sinon.createStubInstance(Command);
         const object = new Miles(program, fpath);
-        let logstub = {debug: function () {}};
+        let logstub = { debug: function () {} };
         object.logger = logstub;
-        const logspy = sinon.spy(logstub, 'debug');
+        const logspy = sinon.spy(logstub, "debug");
         await object.loadConfig();
         assert.ok(object.configStorage instanceof Yaml);
         assert.ok(logspy.calledTwice);
