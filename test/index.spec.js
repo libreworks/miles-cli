@@ -23,8 +23,12 @@ describe("Miles", function () {
       try {
         const program = sinon.createStubInstance(Command);
         const object = new Miles(program);
+        let logstub = {debug: function () {}};
+        object.logger = logstub;
+        const logspy = sinon.spy(logstub, 'debug');
         await object.loadConfig();
         assert.ok(object.config instanceof Config);
+        assert.ok(logspy.calledTwice);
       } finally {
         await cleanup();
       }
@@ -36,8 +40,12 @@ describe("Miles", function () {
       try {
         const program = sinon.createStubInstance(Command);
         const object = new Miles(program, fpath);
+        let logstub = {debug: function () {}};
+        object.logger = logstub;
+        const logspy = sinon.spy(logstub, 'debug');
         await object.loadConfig();
         assert.ok(object.configStorage instanceof Yaml);
+        assert.ok(logspy.calledTwice);
         assert.strictEqual(
           object.configStorage.filename,
           path.join(fpath, "config.yaml")
@@ -78,11 +86,13 @@ describe("Miles", function () {
         const meth2 = mock.expects("addCommands").once();
         const meth3 = mock.expects("loadLogger").once();
         const meth4 = mock.expects("addGlobalOptions").once();
+        const meth5 = mock.expects("loadPlugins").once();
         await object.start();
         meth1.verify();
         meth2.verify();
         meth3.verify();
         meth4.verify();
+        meth5.verify();
       } finally {
         await cleanup();
       }
