@@ -1,6 +1,7 @@
 const assert = require("assert");
 const sinon = require("sinon");
-const { Plugins } = require("../lib/plugins");
+const { Plugins, PluginManager } = require("../lib/plugins");
+const StubPlugin = require("./stub-plugin");
 
 describe("Plugins", function () {
   describe("#construct", function () {
@@ -41,6 +42,38 @@ describe("Plugins", function () {
       plugins.remove("foo");
       assert.ok(!plugins.has("foo"));
       assert.deepEqual(plugins.export(), ["bar"]);
+    });
+  });
+});
+
+describe("PluginManager", function () {
+  describe("#construct", function () {
+    it("should set properties", async function () {
+      const miles = { foo: "bar" };
+      const object = new PluginManager(miles);
+      assert.strictEqual(object.miles, miles);
+    });
+  });
+  describe("#load", function () {
+    it("should load plugins", async function () {
+      const miles = { plugins: { export: () => ["../test/stub-plugin"] } };
+      const object = new PluginManager(miles);
+      const plugins = await object.load();
+      assert.deepEqual(plugins, [StubPlugin]);
+    });
+    it("should throw error for non-plugin", async function () {
+      await assert.rejects(
+        async () => {
+          const miles = { plugins: { export: () => ["assert"] } };
+          const object = new PluginManager(miles);
+          const plugins = await object.load();
+        },
+        {
+          name: "TypeError",
+          message:
+            "Invalid Miles plugin: assert (MILES_PLUGIN_API property missing)",
+        }
+      );
     });
   });
 });

@@ -47,12 +47,20 @@ describe("Config", function () {
     it("should not clone non-objects", async function () {
       assert.throws(() => new Config("abc"), TypeError);
     });
+    it("should skip non-objects", async function () {
+      const obj = new Config({foo: 'bar', 'abc': {'def': 123}});
+      assert.deepEqual(obj.export(), {'abc': {'def': 123}});
+    });
   });
 
   describe("#get", function () {
     it("returns what is there", async function () {
       const obj = new Config({ abc: { def: "ghi" } });
       assert.strictEqual(obj.get("abc", "def"), "ghi");
+    });
+    it("returns nothing for what is not there top-level", async function () {
+      const obj = new Config({ abc: { def: "ghi" } });
+      assert.strictEqual(obj.get("mno", "pqr"), undefined);
     });
     it("returns nothing for what is not there", async function () {
       const obj = new Config({ abc: { def: "ghi" } });
