@@ -24,7 +24,7 @@ describe("Miles", function () {
       try {
         const program = sinon.createStubInstance(Command);
         const object = new Miles(program);
-        let logstub = { debug: function () {} };
+        let logstub = { debug: () => {} };
         object.logger = logstub;
         const logspy = sinon.spy(logstub, "debug");
         await object.loadPlugins();
@@ -41,7 +41,7 @@ describe("Miles", function () {
       try {
         const program = sinon.createStubInstance(Command);
         const object = new Miles(program, fpath);
-        let logstub = { debug: function () {} };
+        let logstub = { debug: () => {} };
         object.logger = logstub;
         const logspy = sinon.spy(logstub, "debug");
         await object.loadPlugins();
@@ -62,7 +62,7 @@ describe("Miles", function () {
       try {
         const program = sinon.createStubInstance(Command);
         const object = new Miles(program, fpath);
-        let logstub = { debug: function () {} };
+        let logstub = { debug: () => {} };
         object.logger = logstub;
         const logspy = sinon.spy(logstub, "debug");
         await object.loadPlugins();
@@ -82,7 +82,7 @@ describe("Miles", function () {
       try {
         const program = sinon.createStubInstance(Command);
         const object = new Miles(program);
-        let logstub = { debug: function () {} };
+        let logstub = { debug: () => {} };
         object.logger = logstub;
         const logspy = sinon.spy(logstub, "debug");
         await object.loadConfig();
@@ -99,7 +99,7 @@ describe("Miles", function () {
       try {
         const program = sinon.createStubInstance(Command);
         const object = new Miles(program, fpath);
-        let logstub = { debug: function () {} };
+        let logstub = { debug: () => {} };
         object.logger = logstub;
         const logspy = sinon.spy(logstub, "debug");
         await object.loadConfig();
@@ -140,8 +140,8 @@ describe("Miles", function () {
       const error = new Error("Problem");
       const program = sinon.createStubInstance(Command);
       const logger = { error: () => {}, debug: () => {} };
-      const stub1 = sinon.stub(logger, 'error');
-      const stub2 = sinon.stub(logger, 'debug');
+      const stub1 = sinon.stub(logger, "error");
+      const stub2 = sinon.stub(logger, "debug");
       const exitStub = sinon.stub(process, "exit");
       try {
         const object = new Miles(program, fpath);

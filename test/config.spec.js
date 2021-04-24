@@ -48,8 +48,8 @@ describe("Config", function () {
       assert.throws(() => new Config("abc"), TypeError);
     });
     it("should skip non-objects", async function () {
-      const obj = new Config({foo: 'bar', 'abc': {'def': 123}});
-      assert.deepEqual(obj.export(), {'abc': {'def': 123}});
+      const obj = new Config({ foo: "bar", abc: { def: 123 } });
+      assert.deepEqual(obj.export(), { abc: { def: 123 } });
     });
   });
 
