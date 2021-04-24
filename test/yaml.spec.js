@@ -8,31 +8,27 @@ const Yaml = require("../lib/yaml");
 describe("Yaml", function () {
   describe("#construct", function () {
     it("should get the right directory", async function () {
-      const { path: fpath, fd, cleanup } = await tmp.file();
-      try {
-        const obj = new Yaml(fpath);
-        assert.strictEqual(obj.filename, fpath);
-      } finally {
-        await cleanup();
-      }
+      const filename = "/tmp/foobar.yml";
+      const obj = new Yaml(filename);
+      assert.strictEqual(obj.filename, filename);
     });
     it("should use a different encoding", async function () {
-      const { path: fpath, fd, cleanup } = await tmp.file();
-      try {
-        const encoding = "utf16";
-        const obj = new Yaml(fpath, encoding);
-        assert.strictEqual(obj.encoding, encoding);
-      } finally {
-        await cleanup();
-      }
+      const filename = "/tmp/barfoo.yml";
+      const encoding = "utf16";
+      const obj = new Yaml(filename, encoding);
+      assert.strictEqual(obj.encoding, encoding);
     });
   });
 
   describe("#read", function () {
+    it("should return empty in case of error", async function () {
+      const obj = new Yaml("/tmp/non-existent-miles-config-file.yml");
+      assert.deepEqual(await obj.read(), {});
+    });
     it("should return file contents", async function () {
       const { path: fpath, fd, cleanup } = await tmp.file();
       try {
-        fs.writeFile(fpath, "abc:\n    def: ghi");
+        await fs.writeFile(fpath, "abc:\n    def: ghi");
         const obj = new Yaml(fpath);
         const expected = {
           abc: {
