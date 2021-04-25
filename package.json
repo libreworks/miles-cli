@@ -49,6 +49,7 @@
     "commander": "^7.2.0",
     "fs.promises": "^0.1.2",
     "mkdirp": "^1.0.4",
+    "ora": "^4.1.1",
     "winston": "^3.3.3",
     "yaml": "^1.10.2"
   }
