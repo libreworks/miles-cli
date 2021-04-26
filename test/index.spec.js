@@ -141,7 +141,7 @@ describe("Miles", function () {
       const error = new Error("Problem");
       const program = sinon.createStubInstance(Command);
       const logger = { error: () => {}, debug: () => {} };
-      const output = { spinner: { active: true, fail: () => {} } };
+      const output = { spinner: { isSpinning: true, fail: () => {} } };
       const stub1 = sinon.stub(logger, "error");
       const stub2 = sinon.stub(logger, "debug");
       const stub3 = sinon.stub(output.spinner, "fail");

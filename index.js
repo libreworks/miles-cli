@@ -137,7 +137,7 @@ class Miles {
    */
   handleError(e) {
     const { name, message } = e;
-    if (this.output && this.output.spinner && this.output.spinner.active) {
+    if (this.output && this.output.spinner && this.output.spinner.isSpinning) {
       this.output.spinner.fail();
     }
     this.logger.error("An error has occurred");
