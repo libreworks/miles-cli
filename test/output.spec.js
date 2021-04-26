@@ -54,22 +54,27 @@ describe("Output", function () {
   });
   describe("#createSpinnerAwareTransport", function () {
     it("should not proxy non-log methods", async () => {
-      const transport = {test: () => {}, log: () => {throw new Error("Should not be called");}};
-      const transportStub = sinon.stub(transport, 'log');
+      const transport = {
+        test: () => {},
+        log: () => {
+          throw new Error("Should not be called");
+        },
+      };
+      const transportStub = sinon.stub(transport, "log");
       const stubInfo = {};
       const stubCallback = () => {};
-      const spinner = {isSpinning: false};
+      const spinner = { isSpinning: false };
       const object = new Output(spinner);
       const proxy = object.createSpinnerAwareTransport(transport);
       proxy.test();
       assert.ok(transportStub.notCalled);
     });
     it("should proxy to the delegate transport when spinner is off", async () => {
-      const transport = {log: () => {}};
-      const transportStub = sinon.stub(transport, 'log');
+      const transport = { log: () => {} };
+      const transportStub = sinon.stub(transport, "log");
       const stubInfo = {};
       const stubCallback = () => {};
-      const spinner = {isSpinning: false};
+      const spinner = { isSpinning: false };
       const object = new Output(spinner);
       const proxy = object.createSpinnerAwareTransport(transport);
       proxy.log(stubInfo, stubCallback);
@@ -77,13 +82,13 @@ describe("Output", function () {
       assert.ok(transportStub.calledWith(stubInfo, stubCallback));
     });
     it("should proxy to the delegate transport when spinner is on", async () => {
-      const transport = {log: () => {}};
-      const transportStub = sinon.stub(transport, 'log');
+      const transport = { log: () => {} };
+      const transportStub = sinon.stub(transport, "log");
       const stubInfo = {};
       const stubCallback = () => {};
-      const spinner = {isSpinning: true, clear: () => {}, render: () => {}};
-      const clearStub = sinon.stub(spinner, 'clear');
-      const renderStub = sinon.stub(spinner, 'render');
+      const spinner = { isSpinning: true, clear: () => {}, render: () => {} };
+      const clearStub = sinon.stub(spinner, "clear");
+      const renderStub = sinon.stub(spinner, "render");
       const object = new Output(spinner);
       const proxy = object.createSpinnerAwareTransport(transport);
       proxy.log(stubInfo, stubCallback);
