@@ -1,6 +1,7 @@
 const path = require("path");
 const xdg = require("@folder/xdg");
 const winston = require("winston");
+const ora = require("ora");
 const { PluginManager, Plugins } = require("./lib/plugins");
 const Output = require("./lib/output");
 const Config = require("./lib/config");
@@ -42,14 +43,14 @@ class Miles {
         // We need to register the global options, like logging verbosity.
         this.addGlobalOptions();
         // This output object, which handles the Ora spinner, uses stderr.
-        this.output = new Output();
+        this.loadOutput();
         // Load up the Winston logging, which uses stderr, too.
         this.loadLogger();
       } catch (bootstrapError) {
         // Logging isn't set up yet, so just write error to stderr and exit.
         console.error(bootstrapError);
         process.exit(1);
-        return; // Only used in unit tests where we've mocked process.exit.
+        return; // Only needed in unit tests where we've stubbed process.exit.
       }
       // Batch load the asynchronous things.
       await Promise.all([this.loadConfig(), this.loadPlugins()]);
@@ -62,9 +63,17 @@ class Miles {
   }
 
   /**
-   * Loads the logger and output manager.
+   * Loads the output manager.
+   */
+  loadOutput() {
+    const spinner = ora({ spinner: "dots2" });
+    this.output = new Output(spinner);
+  }
+
+  /**
+   * Loads the Winston logger.
    *
-   * We need to parse the verbosity so we can provide it to the logger.
+   * We need to parse the verbosity so we can provide it to the stderr logger.
    */
   loadLogger() {
     this.program.parse();
