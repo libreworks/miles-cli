@@ -1,7 +1,9 @@
 const path = require("path");
 const xdg = require("@folder/xdg");
 const winston = require("winston");
+const ora = require("ora");
 const { PluginManager, Plugins } = require("./lib/plugins");
+const Output = require("./lib/output");
 const Config = require("./lib/config");
 const Yaml = require("./lib/yaml");
 const ConfigCommand = require("./lib/commands/config");
@@ -36,29 +38,53 @@ class Miles {
    */
   async start() {
     try {
-      this.addGlobalOptions();
-      this.loadLogger();
+      // This inner try block is considered the "bootstrap" tasks
+      try {
+        // We need to register the global options, like logging verbosity.
+        this.addGlobalOptions();
+        // This output object, which handles the Ora spinner, uses stderr.
+        this.loadOutput();
+        // Load up the Winston logging, which uses stderr, too.
+        this.loadLogger();
+      } catch (bootstrapError) {
+        // Logging isn't set up yet, so just write error to stderr and exit.
+        console.error(bootstrapError);
+        process.exit(1);
+        return; // Only needed in unit tests where we've stubbed process.exit.
+      }
+      // Batch load the asynchronous things.
       await Promise.all([this.loadConfig(), this.loadPlugins()]);
+      // Register commands with Commander.
       this.addCommands();
-    } catch (e) {
-      this.handleError(e);
+    } catch (startupError) {
+      // Any errors which occur after the "bootstrap" can be handled here.
+      this.handleError(startupError);
     }
   }
 
   /**
-   * Loads the logger.
+   * Loads the output manager.
+   */
+  loadOutput() {
+    const spinner = ora({ spinner: "dots2" });
+    this.output = new Output(spinner);
+  }
+
+  /**
+   * Loads the Winston logger.
    *
-   * We need to parse the verbosity so we can provide it to the logger.
+   * We need to parse the verbosity so we can provide it to the stderr logger.
    */
   loadLogger() {
     this.program.parse();
     const levels = winston.config.syslog.levels;
     const levelNames = Object.keys(levels);
+    const consoleTransport = new winston.transports.Console({
+      format: winston.format.cli({ levels }),
+      stderrLevels: levelNames,
+    });
     this.logTransports = [
-      new winston.transports.Console({
-        format: winston.format.cli({ levels }),
-        stderrLevels: levelNames,
-      }),
+      this.output.createSpinnerAwareTransport(consoleTransport),
     ];
     const verbosity = this.program.opts().verbose;
     this.logger = winston.createLogger({
@@ -99,10 +125,11 @@ class Miles {
     this.logger.debug("Loading plugin configuration");
     this.pluginStorage = new Yaml(path.join(this.configDir, "plugins.yaml"));
     this.plugins = new Plugins(await this.pluginStorage.read());
-    this.logger.debug("Initializing plugins");
+    this.logger.debug("Plugin configuration is ready to go");
+    this.logger.debug("Instantiating plugin objects");
     this.pluginManager = new PluginManager(this);
     await this.pluginManager.load();
-    this.logger.debug("Plugins are ready to go");
+    this.logger.debug("Plugin objects are ready to go");
   }
 
   /**
@@ -110,6 +137,9 @@ class Miles {
    */
   handleError(e) {
     const { name, message } = e;
+    if (this.output && this.output.spinner && this.output.spinner.isSpinning) {
+      this.output.spinner.fail();
+    }
     this.logger.error("An error has occurred");
     this.logger.error(`[${name}] ${message}`);
     this.logger.debug(e.stack);

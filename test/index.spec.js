@@ -5,6 +5,7 @@ const tmp = require("tmp-promise");
 const path = require("path");
 const xdg = require("@folder/xdg");
 const Config = require("../lib/config");
+const Output = require("../lib/output");
 const Yaml = require("../lib/yaml");
 const { Plugins, PluginManager } = require("../lib/plugins");
 const Miles = require("../");
@@ -29,7 +30,7 @@ describe("Miles", function () {
         const logspy = sinon.spy(logstub, "debug");
         await object.loadPlugins();
         assert.ok(object.plugins instanceof Plugins);
-        assert.ok(logspy.calledThrice);
+        assert.strictEqual(logspy.callCount, 4);
       } finally {
         await cleanup();
       }
@@ -46,7 +47,7 @@ describe("Miles", function () {
         const logspy = sinon.spy(logstub, "debug");
         await object.loadPlugins();
         assert.ok(object.pluginStorage instanceof Yaml);
-        assert.ok(logspy.calledThrice);
+        assert.strictEqual(logspy.callCount, 4);
         assert.strictEqual(
           object.pluginStorage.filename,
           path.join(fpath, "plugins.yaml")
@@ -68,7 +69,7 @@ describe("Miles", function () {
         await object.loadPlugins();
         assert.ok(object.pluginManager instanceof PluginManager);
         assert.strictEqual(object.pluginManager.miles, object);
-        assert.ok(logspy.calledThrice);
+        assert.strictEqual(logspy.callCount, 4);
       } finally {
         await cleanup();
       }
@@ -133,19 +134,73 @@ describe("Miles", function () {
     });
   });
   describe("#handleError", function () {
-    it("should do its thing", async function () {
+    it("should disable spinner", async function () {
       const { path: fpath, cleanup } = await tmp.dir({
         unsafeCleanup: true,
       });
       const error = new Error("Problem");
       const program = sinon.createStubInstance(Command);
       const logger = { error: () => {}, debug: () => {} };
+      const output = { spinner: { isSpinning: true, fail: () => {} } };
+      const stub1 = sinon.stub(logger, "error");
+      const stub2 = sinon.stub(logger, "debug");
+      const stub3 = sinon.stub(output.spinner, "fail");
+      const exitStub = sinon.stub(process, "exit");
+      try {
+        const object = new Miles(program, fpath);
+        object.logger = logger;
+        object.output = output;
+        object.handleError(error);
+        assert.ok(stub1.calledTwice);
+        assert.ok(stub2.calledOnce);
+        assert.ok(stub3.calledOnce);
+        assert.ok(exitStub.calledWith(1));
+      } finally {
+        exitStub.restore();
+        await cleanup();
+      }
+    });
+    it("should not disable inactive spinner", async function () {
+      const { path: fpath, cleanup } = await tmp.dir({
+        unsafeCleanup: true,
+      });
+      const error = new Error("Problem");
+      const program = sinon.createStubInstance(Command);
+      const logger = { error: () => {}, debug: () => {} };
+      const output = { spinner: { isSpinning: false, fail: () => {} } };
+      const stub1 = sinon.stub(logger, "error");
+      const stub2 = sinon.stub(logger, "debug");
+      const stub3 = sinon.stub(output.spinner, "fail");
+      const exitStub = sinon.stub(process, "exit");
+      try {
+        const object = new Miles(program, fpath);
+        object.logger = logger;
+        object.output = output;
+        object.handleError(error);
+        assert.ok(stub1.calledTwice);
+        assert.ok(stub2.calledOnce);
+        assert.ok(!stub3.called);
+        assert.ok(exitStub.calledWith(1));
+      } finally {
+        exitStub.restore();
+        await cleanup();
+      }
+    });
+    it("should not do anything with an undefined spinner", async function () {
+      const { path: fpath, cleanup } = await tmp.dir({
+        unsafeCleanup: true,
+      });
+      const error = new Error("Problem");
+      const program = sinon.createStubInstance(Command);
+      const logger = { error: () => {}, debug: () => {} };
+      const output = { spinner: undefined };
       const stub1 = sinon.stub(logger, "error");
       const stub2 = sinon.stub(logger, "debug");
       const exitStub = sinon.stub(process, "exit");
       try {
         const object = new Miles(program, fpath);
         object.logger = logger;
+        object.output = output;
         object.handleError(error);
         assert.ok(stub1.calledTwice);
         assert.ok(stub2.calledOnce);
@@ -155,8 +210,59 @@ describe("Miles", function () {
         await cleanup();
       }
     });
+    it("should do its thing", async function () {
+      const { path: fpath, cleanup } = await tmp.dir({
+        unsafeCleanup: true,
+      });
+      try {
+        const error = new Error("Problem");
+        const program = sinon.createStubInstance(Command);
+        const logger = { error: () => {}, debug: () => {} };
+        const stub1 = sinon.stub(logger, "error");
+        const stub2 = sinon.stub(logger, "debug");
+        const exitStub = sinon.stub(process, "exit");
+        try {
+          const object = new Miles(program, fpath);
+          object.logger = logger;
+          object.handleError(error);
+          assert.ok(stub1.calledTwice);
+          assert.ok(stub2.calledOnce);
+          assert.ok(exitStub.calledWith(1));
+        } finally {
+          exitStub.restore();
+        }
+      } finally {
+        await cleanup();
+      }
+    });
   });
   describe("#start", function () {
+    it("should handle startup errors", async function () {
+      const { path: fpath, cleanup } = await tmp.dir({
+        unsafeCleanup: true,
+      });
+      try {
+        const program = sinon.createStubInstance(Command);
+        const errorStub = sinon.stub(console, "error");
+        const exitStub = sinon.stub(process, "exit");
+        try {
+          const object = new Miles(program, fpath);
+          const mock = sinon.mock(object);
+          const error = new Error("Problem");
+          mock.expects("addGlobalOptions").once();
+          mock.expects("loadLogger").throws(error);
+          await object.start();
+          mock.verify();
+          assert.ok(errorStub.calledWith(error));
+          assert.ok(exitStub.calledWith(1));
+        } finally {
+          errorStub.restore();
+          exitStub.restore();
+        }
+      } finally {
+        await cleanup();
+      }
+    });
     it("should handle errors", async function () {
       const { path: fpath, cleanup } = await tmp.dir({
         unsafeCleanup: true,
@@ -166,7 +272,10 @@ describe("Miles", function () {
         const object = new Miles(program, fpath);
         const mock = sinon.mock(object);
         const error = new Error("Problem");
-        mock.expects("addGlobalOptions").once().throws(error);
+        mock.expects("addGlobalOptions").once();
+        mock.expects("loadLogger").once();
+        mock.expects("loadPlugins").atMost(1);
+        mock.expects("loadConfig").once().throws(error);
         mock.expects("handleError").once().withArgs(error);
         await object.start();
         mock.verify();

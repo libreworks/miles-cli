@@ -2,6 +2,7 @@ const assert = require("assert");
 const sinon = require("sinon");
 const PluginCommand = require("../../lib/commands/plugin");
 const Config = require("../../lib/config");
+const Output = require("../../lib/output");
 const Yaml = require("../../lib/yaml");
 
 describe("PluginCommand", function () {
@@ -13,7 +14,11 @@ describe("PluginCommand", function () {
         export: () => ["foobar"],
       };
       let pluginStorage = { write: async () => {} };
-      const miles = { plugins, pluginStorage };
+      const output = new Output();
+      const outputStub = sinon
+        .stub(output, "spinForPromise")
+        .callsFake((promise, text) => promise);
+      const miles = { plugins, pluginStorage, output };
       let logstub = { info: () => {} };
       miles.logger = logstub;
       const logspy = sinon.spy(logstub, "info");
@@ -24,6 +29,7 @@ describe("PluginCommand", function () {
       try {
         obj.add("foobar");
         assert.ok(logspy.calledOnce);
+        assert.ok(outputStub.calledOnce);
         assert.ok(pluginsspy.calledOnce);
         assert.ok(pluginsspy.calledWith("foobar"));
         assert.ok(pluginstoragespy.calledWith({ plugins: ["foobar"] }));
@@ -36,13 +42,11 @@ describe("PluginCommand", function () {
       const miles = { plugins };
       let logstub = { info: () => {}, warning: () => {} };
       miles.logger = logstub;
-      const logspy = sinon.spy(logstub, "info");
       const logspy2 = sinon.spy(logstub, "warning");
       const obj = new PluginCommand(miles);
       const consoleStub = sinon.stub(console, "log");
       try {
         obj.add("foobar");
-        assert.ok(logspy.calledOnce);
         assert.ok(logspy2.calledOnce);
       } finally {
         consoleStub.restore();
@@ -54,7 +58,11 @@ describe("PluginCommand", function () {
     it("should call the uninstall method", async function () {
       let plugins = { has: () => true, remove: () => {}, export: () => [] };
       let pluginStorage = { write: async () => {} };
-      const miles = { plugins, pluginStorage };
+      const output = new Output();
+      const outputStub = sinon
+        .stub(output, "spinForPromise")
+        .callsFake((promise, text) => promise);
+      const miles = { plugins, pluginStorage, output };
       let logstub = { info: function () {} };
       miles.logger = logstub;
       const logspy = sinon.spy(logstub, "info");
@@ -65,6 +73,7 @@ describe("PluginCommand", function () {
       try {
         obj.remove("foobar");
         assert.ok(logspy.calledOnce);
+        assert.ok(outputStub.calledOnce);
         assert.ok(pluginsspy.calledOnce);
         assert.ok(pluginsspy.calledWith("foobar"));
         assert.ok(pluginstoragespy.calledWith({ plugins: [] }));
@@ -77,13 +86,11 @@ describe("PluginCommand", function () {
       const miles = { plugins };
       let logstub = { info: () => {}, warning: () => {} };
       miles.logger = logstub;
-      const logspy = sinon.spy(logstub, "info");
       const logspy2 = sinon.spy(logstub, "warning");
       const obj = new PluginCommand(miles);
       const consoleStub = sinon.stub(console, "log");
       try {
         obj.remove("foobar");
-        assert.ok(logspy.calledOnce);
         assert.ok(logspy2.calledOnce);
       } finally {
         consoleStub.restore();
