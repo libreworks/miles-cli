@@ -154,6 +154,7 @@ class Miles {
     commands
       .map((clz) => new clz(this))
       .forEach((cmd) => cmd.addCommands(this.program));
+    this.pluginManager.addCommands(this.program);
   }
 }
 

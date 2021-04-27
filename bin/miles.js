@@ -1,8 +1,12 @@
 #!/usr/bin/env node
 
-const package = require("../package.json");
 const { Command } = require("commander");
+const package = require("../package.json");
 const Miles = require("../");
+
+// Allow loading from global modules for plugins.
+process.env.NODE_PATH = require("global-modules");
+require("module").Module._initPaths();
 
 const program = new Command();
 program.version(package.version);
