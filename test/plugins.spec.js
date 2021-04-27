@@ -58,8 +58,8 @@ describe("PluginManager", function () {
     it("should load plugins", async function () {
       const miles = { plugins: { export: () => ["../test/stub-plugin"] } };
       const object = new PluginManager(miles);
-      const plugins = await object.load();
-      assert.deepEqual(plugins, [StubPlugin]);
+      await object.load();
+      assert.deepEqual(object.plugins, [new StubPlugin()]);
     });
     it("should throw error for non-plugin", async function () {
       await assert.rejects(

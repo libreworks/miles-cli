@@ -25,14 +25,16 @@ describe("PluginCommand", function () {
       const pluginsspy = sinon.spy(plugins, "add");
       const pluginstoragespy = sinon.spy(pluginStorage, "write");
       const obj = new PluginCommand(miles);
+      const npmspy1 = sinon.stub(obj, "npmInstall");
       const consoleStub = sinon.stub(console, "log");
       try {
-        obj.add("foobar");
-        assert.ok(logspy.calledOnce);
-        assert.ok(outputStub.calledOnce);
+        await obj.add("foobar");
         assert.ok(pluginsspy.calledOnce);
         assert.ok(pluginsspy.calledWith("foobar"));
+        assert.ok(logspy.calledOnce);
+        assert.ok(npmspy1.calledWith("foobar"));
         assert.ok(pluginstoragespy.calledWith({ plugins: ["foobar"] }));
+        assert.ok(outputStub.calledOnce);
       } finally {
         consoleStub.restore();
       }
@@ -46,7 +48,7 @@ describe("PluginCommand", function () {
       const obj = new PluginCommand(miles);
       const consoleStub = sinon.stub(console, "log");
       try {
-        obj.add("foobar");
+        await obj.add("foobar");
         assert.ok(logspy2.calledOnce);
       } finally {
         consoleStub.restore();
@@ -69,13 +71,15 @@ describe("PluginCommand", function () {
       const pluginsspy = sinon.spy(plugins, "remove");
       const pluginstoragespy = sinon.spy(pluginStorage, "write");
       const obj = new PluginCommand(miles);
+      const npmspy1 = sinon.stub(obj, "npmUninstall");
       const consoleStub = sinon.stub(console, "log");
       try {
-        obj.remove("foobar");
+        await obj.remove("foobar");
         assert.ok(logspy.calledOnce);
         assert.ok(outputStub.calledOnce);
         assert.ok(pluginsspy.calledOnce);
         assert.ok(pluginsspy.calledWith("foobar"));
+        assert.ok(npmspy1.calledWith("foobar"));
         assert.ok(pluginstoragespy.calledWith({ plugins: [] }));
       } finally {
         consoleStub.restore();
@@ -90,7 +94,7 @@ describe("PluginCommand", function () {
       const obj = new PluginCommand(miles);
       const consoleStub = sinon.stub(console, "log");
       try {
-        obj.remove("foobar");
+        await obj.remove("foobar");
         assert.ok(logspy2.calledOnce);
       } finally {
         consoleStub.restore();
