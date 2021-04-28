@@ -1,5 +1,6 @@
 const assert = require("assert");
 const sinon = require("sinon");
+const npmInstallGlobal = require("npm-install-global");
 const PluginCommand = require("../../lib/commands/plugin");
 const Config = require("../../lib/config");
 const Output = require("../../lib/output");
@@ -34,7 +35,7 @@ describe("PluginCommand", function () {
         assert.ok(logspy.calledOnce);
         assert.ok(npmspy1.calledWith("foobar"));
         assert.ok(pluginstoragespy.calledWith({ plugins: ["foobar"] }));
-        assert.ok(outputStub.calledOnce);
+        assert.ok(outputStub.calledTwice);
       } finally {
         consoleStub.restore();
       }
@@ -76,7 +77,7 @@ describe("PluginCommand", function () {
       try {
         await obj.remove("foobar");
         assert.ok(logspy.calledOnce);
-        assert.ok(outputStub.calledOnce);
+        assert.ok(outputStub.calledTwice);
         assert.ok(pluginsspy.calledOnce);
         assert.ok(pluginsspy.calledWith("foobar"));
         assert.ok(npmspy1.calledWith("foobar"));
@@ -98,6 +99,76 @@ describe("PluginCommand", function () {
         assert.ok(logspy2.calledOnce);
       } finally {
         consoleStub.restore();
+      }
+    });
+  });
+  describe("#npmInstall", () => {
+    it("should call npm to install", async () => {
+      const miles = {};
+      const stub = sinon.stub(npmInstallGlobal, "maybeInstall");
+      try {
+        const obj = new PluginCommand(miles);
+        const pluginName = "foobar";
+        const actual = obj.npmInstall(pluginName);
+        assert.ok(actual instanceof Promise);
+        assert.ok(stub.calledOnce);
+        assert.strictEqual(stub.firstCall.args[0], pluginName);
+        stub.firstCall.args[1](undefined, [pluginName]);
+        assert.doesNotReject(actual);
+        assert.strictEqual(await actual, undefined);
+      } finally {
+        stub.restore();
+      }
+    });
+    it("should call npm to install and handle error", async () => {
+      const miles = {};
+      const stub = sinon.stub(npmInstallGlobal, "maybeInstall");
+      try {
+        const obj = new PluginCommand(miles);
+        const pluginName = "foobar";
+        const actual = obj.npmInstall(pluginName);
+        assert.ok(actual instanceof Promise);
+        assert.ok(stub.calledOnce);
+        assert.strictEqual(stub.firstCall.args[0], pluginName);
+        const rejection = new Error("An error");
+        stub.firstCall.args[1](rejection);
+        assert.rejects(actual, rejection);
+      } finally {
+        stub.restore();
+      }
+    });
+    it("should call npm to uninstall", async () => {
+      const miles = {};
+      const stub = sinon.stub(npmInstallGlobal, "uninstall");
+      try {
+        const obj = new PluginCommand(miles);
+        const pluginName = "foobar";
+        const actual = obj.npmUninstall(pluginName);
+        assert.ok(actual instanceof Promise);
+        assert.ok(stub.calledOnce);
+        assert.strictEqual(stub.firstCall.args[0], pluginName);
+        stub.firstCall.args[1](undefined, [pluginName]);
+        assert.doesNotReject(actual);
+        assert.strictEqual(await actual, undefined);
+      } finally {
+        stub.restore();
+      }
+    });
+    it("should call npm to uninstall and handle error", async () => {
+      const miles = {};
+      const stub = sinon.stub(npmInstallGlobal, "uninstall");
+      try {
+        const obj = new PluginCommand(miles);
+        const pluginName = "foobar";
+        const actual = obj.npmUninstall(pluginName);
+        assert.ok(actual instanceof Promise);
+        assert.ok(stub.calledOnce);
+        assert.strictEqual(stub.firstCall.args[0], pluginName);
+        const rejection = new Error("An error");
+        stub.firstCall.args[1](rejection);
+        assert.rejects(actual, rejection);
+      } finally {
+        stub.restore();
       }
     });
   });
