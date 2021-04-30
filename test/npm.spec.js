@@ -48,6 +48,38 @@ describe("Npm", () => {
       }
     });
   });
+  describe("#run", () => {
+    it("should throw error with non-zero exit", async () => {
+      const stub = sinon.stub(util, "spawn");
+      try {
+        const object = new Npm("anpm");
+        const expected = { code: 1, signal: null, stdout: "", stderr: "no" };
+        stub.resolves(expected);
+        await assert.rejects(
+          object.run(["uninstall", "--global", "--no-progress"], ["foobar"]),
+          (e) => {
+            assert.strictEqual(e.name, "Error");
+            assert.strictEqual(
+              e.message,
+              "npm exited with a non-zero error code (1)"
+            );
+            assert.strictEqual(e.result, expected);
+            return true;
+          }
+        );
+        assert.ok(
+          stub.calledWith("anpm", [
+            "uninstall",
+            "--global",
+            "--no-progress",
+            "foobar",
+          ])
+        );
+      } finally {
+        stub.restore();
+      }
+    });
+  });
   describe("#isPackageInstalled", () => {
     it("should return true for installed packages", async () => {
       const object = new Npm();

@@ -12,4 +12,5 @@ const program = new Command();
 program.version(package.version);
 
 const miles = new Miles(program, process.env.MILES_CONFIG_DIR);
-miles.start().then(() => program.parse());
+
+miles.start().then(() => miles.parseCommand());

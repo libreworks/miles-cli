@@ -46,10 +46,9 @@ describe("util", () => {
       assert.strictEqual(results.code, 1);
       assert.strictEqual(results.signal, null);
       assert.strictEqual(results.stdout, "");
-      assert.strictEqual(
-        results.stderr,
-        "stat: cannot stat 'not-there': No such file or directory\n"
-      );
+      assert.ok(results.stderr.match(/^stat/));
+      assert.ok(results.stderr.match(/not-there/));
+      assert.ok(results.stderr.match(/No such file or directory\s*$/));
     });
   });
 });

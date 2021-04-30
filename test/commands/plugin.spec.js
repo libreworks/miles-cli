@@ -103,6 +103,23 @@ describe("PluginCommand", function () {
     });
   });
   describe("#npmInstall", () => {
+    it("should bomb out early", async () => {
+      const miles = {};
+      let logstub = { debug: () => {} };
+      miles.logger = logstub;
+      const logspy = sinon.spy(logstub, "debug");
+      const npm = new Npm();
+      const stub = sinon.stub(npm, "getMissingPackages");
+      stub.returns([]);
+      const obj = new PluginCommand(miles, npm);
+      const pluginName = "foobar";
+      const actual = obj.npmInstall(pluginName);
+      assert.ok(actual instanceof Promise);
+      assert.ok(stub.calledOnce);
+      assert.deepEqual(stub.firstCall.args[0], pluginName);
+      assert.doesNotReject(actual);
+      assert.strictEqual(await actual, undefined);
+    });
     it("should call npm to install", async () => {
       const miles = {};
       let logstub = { debug: () => {} };
@@ -111,12 +128,7 @@ describe("PluginCommand", function () {
       const npm = new Npm();
       const stub = sinon.stub(npm, "install");
       const stub2 = sinon.stub(npm, "getMissingPackages");
-      const spawnResults = {
-        code: 0,
-        signal: null,
-        stdout: "Hello",
-        stderr: "",
-      };
+      const spawnResults = undefined;
       stub.resolves(spawnResults);
       const obj = new PluginCommand(miles, npm);
       const pluginName = "foobar";
@@ -142,7 +154,9 @@ describe("PluginCommand", function () {
         stdout: "",
         stderr: "Error",
       };
-      stub.resolves(spawnResults);
+      const spawnError = new Error("npm exited with a non-zero error code (1)");
+      spawnError.result = spawnResults;
+      stub.rejects(spawnError);
       const obj = new PluginCommand(miles, npm);
       const pluginName = "foobar";
       stub2.returns([pluginName]);
@@ -150,9 +164,10 @@ describe("PluginCommand", function () {
       assert.ok(actual instanceof Promise);
       assert.ok(stub.calledOnce);
       assert.deepEqual(stub.firstCall.args[0], [pluginName]);
-      assert.doesNotReject(actual);
-      assert.strictEqual(await actual, spawnResults);
+      assert.rejects(actual, spawnError);
     });
+  });
+  describe("#npmUninstall", () => {
     it("should call npm to uninstall", async () => {
       const miles = {};
       let logstub = { debug: () => {} };
@@ -160,12 +175,7 @@ describe("PluginCommand", function () {
       const logspy = sinon.spy(logstub, "debug");
       const npm = new Npm();
       const stub = sinon.stub(npm, "uninstall");
-      const spawnResults = {
-        code: 0,
-        signal: null,
-        stdout: "Hello",
-        stderr: "",
-      };
+      const spawnResults = undefined;
       stub.resolves(spawnResults);
       const obj = new PluginCommand(miles, npm);
       const pluginName = "foobar";
@@ -189,14 +199,65 @@ describe("PluginCommand", function () {
         stdout: "",
         stderr: "Error",
       };
-      stub.resolves(spawnResults);
+      const spawnError = new Error("npm exited with a non-zero error code (1)");
+      spawnError.result = spawnResults;
+      stub.rejects(spawnError);
       const obj = new PluginCommand(miles, npm);
       const pluginName = "foobar";
       const actual = obj.npmUninstall(pluginName);
       assert.ok(actual instanceof Promise);
       assert.ok(stub.calledOnce);
-      assert.doesNotReject(actual);
-      assert.strictEqual(await actual, spawnResults);
+      assert.rejects(actual, spawnError);
+    });
+  });
+  describe("#logResult", () => {
+    it("should return early", async () => {
+      const miles = {};
+      let logstub = { debug: () => {} };
+      miles.logger = logstub;
+      const logspy = sinon.spy(logstub, "debug");
+      const npm = new Npm();
+      const spawnResults = {
+        code: 1,
+        signal: null,
+        stdout: "",
+        stderr: "Error",
+      };
+      const obj = new PluginCommand(miles, npm);
+      obj.logResult(undefined);
+      assert.ok(logspy.notCalled);
+    });
+    it("should log stderr", async () => {
+      const miles = {};
+      let logstub = { debug: () => {} };
+      miles.logger = logstub;
+      const logspy = sinon.spy(logstub, "debug");
+      const npm = new Npm();
+      const spawnResults = {
+        code: 1,
+        signal: "foo",
+        stdout: "",
+        stderr: "Error",
+      };
+      const obj = new PluginCommand(miles, npm);
+      obj.logResult(spawnResults);
+      assert.ok(logspy.calledThrice);
+    });
+    it("should log stdout", async () => {
+      const miles = {};
+      let logstub = { debug: () => {} };
+      miles.logger = logstub;
+      const logspy = sinon.spy(logstub, "debug");
+      const npm = new Npm();
+      const spawnResults = {
+        code: 0,
+        signal: null,
+        stdout: "Ok",
+        stderr: "",
+      };
+      const obj = new PluginCommand(miles, npm);
+      obj.logResult(spawnResults);
+      assert.ok(logspy.calledTwice);
     });
   });
 });

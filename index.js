@@ -63,6 +63,17 @@ class Miles {
   }
 
   /**
+   * Parses the command line arguments and executes the program.
+   */
+  async parseCommand() {
+    try {
+      await this.program.parseAsync();
+    } catch (e) {
+      this.handleError(e);
+    }
+  }
+
+  /**
    * Loads the output manager.
    */
   loadOutput() {
