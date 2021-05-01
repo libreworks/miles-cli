@@ -113,12 +113,10 @@ describe("PluginCommand", function () {
       stub.returns([]);
       const obj = new PluginCommand(miles, npm);
       const pluginName = "foobar";
-      const actual = obj.npmInstall(pluginName);
-      assert.ok(actual instanceof Promise);
+      const actual = await obj.npmInstall(pluginName);
       assert.ok(stub.calledOnce);
       assert.deepEqual(stub.firstCall.args[0], pluginName);
-      assert.doesNotReject(actual);
-      assert.strictEqual(await actual, undefined);
+      assert.strictEqual(actual, undefined);
     });
     it("should call npm to install", async () => {
       const miles = {};
@@ -133,12 +131,10 @@ describe("PluginCommand", function () {
       const obj = new PluginCommand(miles, npm);
       const pluginName = "foobar";
       stub2.returns([pluginName]);
-      const actual = obj.npmInstall(pluginName);
-      assert.ok(actual instanceof Promise);
+      const actual = await obj.npmInstall(pluginName);
       assert.ok(stub.calledOnce);
       assert.deepEqual(stub.firstCall.args[0], [pluginName]);
-      assert.doesNotReject(actual);
-      assert.strictEqual(await actual, spawnResults);
+      assert.strictEqual(actual, spawnResults);
     });
     it("should call npm to install and handle error", async () => {
       const miles = {};
@@ -160,11 +156,9 @@ describe("PluginCommand", function () {
       const obj = new PluginCommand(miles, npm);
       const pluginName = "foobar";
       stub2.returns([pluginName]);
-      const actual = obj.npmInstall(pluginName);
-      assert.ok(actual instanceof Promise);
+      await assert.rejects(() => obj.npmInstall(pluginName), spawnError);
       assert.ok(stub.calledOnce);
       assert.deepEqual(stub.firstCall.args[0], [pluginName]);
-      assert.rejects(actual, spawnError);
     });
   });
   describe("#npmUninstall", () => {
@@ -179,12 +173,10 @@ describe("PluginCommand", function () {
       stub.resolves(spawnResults);
       const obj = new PluginCommand(miles, npm);
       const pluginName = "foobar";
-      const actual = obj.npmUninstall(pluginName);
-      assert.ok(actual instanceof Promise);
+      const actual = await obj.npmUninstall(pluginName);
+      assert.strictEqual(actual, spawnResults);
       assert.ok(stub.calledOnce);
       assert.strictEqual(stub.firstCall.args[0], pluginName);
-      assert.doesNotReject(actual);
-      assert.strictEqual(await actual, spawnResults);
     });
     it("should call npm to uninstall and handle error", async () => {
       const miles = {};
@@ -204,10 +196,8 @@ describe("PluginCommand", function () {
       stub.rejects(spawnError);
       const obj = new PluginCommand(miles, npm);
       const pluginName = "foobar";
-      const actual = obj.npmUninstall(pluginName);
-      assert.ok(actual instanceof Promise);
+      await assert.rejects(() => obj.npmUninstall(pluginName), spawnError);
       assert.ok(stub.calledOnce);
-      assert.rejects(actual, spawnError);
     });
   });
   describe("#logResult", () => {

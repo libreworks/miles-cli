@@ -22,6 +22,6 @@ miles
 [npm-url]: https://www.npmjs.com/package/miles-cli
 [npm-image]: http://img.shields.io/npm/v/miles-cli.svg
 [travis-url]: https://travis-ci.com/github/libreworks/miles-cli
-[travis-image]: http://img.shields.io/travis/libreworks/miles-cli.svg?label=travis-ci
+[travis-image]: https://travis-ci.com/libreworks/miles-cli.svg?branch=main
 [coveralls-url]: https://coveralls.io/r/libreworks/miles-cli
-[coveralls-image]: http://img.shields.io/coveralls/libreworks/miles-cli/master.svg
+[coveralls-image]: http://img.shields.io/coveralls/libreworks/miles-cli/main.svg

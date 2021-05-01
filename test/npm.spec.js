@@ -56,7 +56,7 @@ describe("Npm", () => {
         const expected = { code: 1, signal: null, stdout: "", stderr: "no" };
         stub.resolves(expected);
         await assert.rejects(
-          object.run(["uninstall", "--global", "--no-progress"], ["foobar"]),
+          () => object.run(["uninstall", "--global", "--no-progress"], ["foobar"]),
           (e) => {
             assert.strictEqual(e.name, "Error");
             assert.strictEqual(
