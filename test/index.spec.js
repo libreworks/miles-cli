@@ -24,7 +24,7 @@ describe("Miles", function () {
       });
       try {
         const program = sinon.createStubInstance(Command);
-        const object = new Miles(program);
+        const object = new Miles(program, fpath);
         let logstub = { debug: () => {} };
         object.logger = logstub;
         const logspy = sinon.spy(logstub, "debug");

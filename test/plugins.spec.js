@@ -1,4 +1,5 @@
 const assert = require("assert");
+const { Command } = require("commander");
 const sinon = require("sinon");
 const { Plugins, PluginManager } = require("../lib/plugins");
 const StubPlugin = require("./stub-plugin");
@@ -58,8 +59,8 @@ describe("PluginManager", function () {
     it("should load plugins", async function () {
       const miles = { plugins: { export: () => ["../test/stub-plugin"] } };
       const object = new PluginManager(miles);
-      const plugins = await object.load();
-      assert.deepEqual(plugins, [StubPlugin]);
+      await object.load();
+      assert.deepEqual(object.plugins, [new StubPlugin()]);
     });
     it("should throw error for non-plugin", async function () {
       await assert.rejects(
@@ -74,6 +75,48 @@ describe("PluginManager", function () {
             "Invalid Miles plugin: assert (MILES_PLUGIN_API property missing)",
         }
       );
+    });
+    it("should throw error for plugin without init function", async () => {
+      await assert.rejects(
+        async () => {
+          const miles = {
+            plugins: { export: () => ["../test/stub-not-plugin"] },
+          };
+          const object = new PluginManager(miles);
+          const plugins = await object.load();
+        },
+        {
+          name: "TypeError",
+          message:
+            "Invalid Miles plugin: ../test/stub-not-plugin (init function missing)",
+        }
+      );
+    });
+  });
+  describe("#addCommands", () => {
+    it("should call commander", async () => {
+      const miles = { foo: "bar" };
+      const object = new PluginManager(miles);
+      const plugin = { addCommands: () => {} };
+      object.plugins = [plugin];
+      const pluginStub = sinon.stub(plugin, "addCommands");
+      const program = sinon.createStubInstance(Command);
+      object.addCommands(program);
+      assert.ok(pluginStub.calledWith(program));
+    });
+    it("should not call commander for plugin without function", async () => {
+      const miles = { foo: "bar" };
+      const object = new PluginManager(miles);
+      const plugin = {
+        somethingElse: () => {
+          throw new Error("Should not be called");
+        },
+      };
+      object.plugins = [plugin];
+      const program = sinon.createStubInstance(Command);
+      assert.doesNotThrow(() => {
+        object.addCommands(program), Error;
+      });
     });
   });
 });
