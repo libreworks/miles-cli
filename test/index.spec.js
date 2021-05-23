@@ -3,8 +3,10 @@ const sinon = require("sinon");
 const { Command } = require("commander");
 const tmp = require("tmp-promise");
 const path = require("path");
+const ora = require("ora");
 const xdg = require("@folder/xdg");
 const Config = require("../lib/config");
+const Input = require("../lib/input");
 const Output = require("../lib/output");
 const Yaml = require("../lib/yaml");
 const { Plugins, PluginManager } = require("../lib/plugins");
@@ -15,6 +17,25 @@ describe("Miles", function () {
     it("should return xdg value", async function () {
       const expected = xdg({ subdir: "miles" }).config;
       assert.strictEqual(Miles.getDefaultConfigDir(), expected);
+    });
+  });
+  describe("#parseCommand", () => {
+    it("should call parseAsync", async () => {
+      const program = sinon.createStubInstance(Command);
+      const object = new Miles(program);
+      await object.parseCommand();
+      assert.ok(program.parseAsync.calledOnce);
+    });
+    it("should handle error from parseAsync", async () => {
+      const program = sinon.createStubInstance(Command);
+      const thrown = new Error("An error has occurred");
+      program.parseAsync.throws(thrown);
+      const object = new Miles(program);
+      const stub = sinon.stub(object, "handleError");
+      await object.parseCommand();
+      assert.ok(program.parseAsync.calledOnce);
+      assert.ok(stub.calledOnce);
+      assert.ok(stub.calledWith(thrown));
     });
   });
   describe("#loadPlugins", function () {
@@ -113,6 +134,23 @@ describe("Miles", function () {
       } finally {
         await cleanup();
       }
+    });
+  });
+  describe("#loadInput", () => {
+    it("should create an Input object", async () => {
+      const program = sinon.createStubInstance(Command);
+      const object = new Miles(program);
+      object.loadInput();
+      assert.ok(object.input instanceof Input);
+    });
+  });
+  describe("#loadOutput", () => {
+    it("should create an Output object", async () => {
+      const program = sinon.createStubInstance(Command);
+      const object = new Miles(program);
+      object.loadOutput();
+      assert.ok(object.output instanceof Output);
+      assert.deepEqual(object.output.spinner, ora({ spinner: "dots2" }));
     });
   });
   describe("#addCommands", function () {
@@ -292,6 +330,8 @@ describe("Miles", function () {
         const object = new Miles(program, fpath);
         const mock = sinon.mock(object);
         mock.expects("loadConfig").once();
+        mock.expects("loadInput").once();
+        mock.expects("loadOutput").once();
         mock.expects("addCommands").once();
         mock.expects("loadLogger").once();
         mock.expects("addGlobalOptions").once();

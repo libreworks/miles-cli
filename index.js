@@ -3,6 +3,7 @@ const xdg = require("@folder/xdg");
 const winston = require("winston");
 const ora = require("ora");
 const { PluginManager, Plugins } = require("./lib/plugins");
+const Input = require("./lib/input");
 const Output = require("./lib/output");
 const Config = require("./lib/config");
 const Yaml = require("./lib/yaml");
@@ -42,6 +43,8 @@ class Miles {
       try {
         // We need to register the global options, like logging verbosity.
         this.addGlobalOptions();
+        // This input object, uses stdin.
+        this.loadInput();
         // This output object, which handles the Ora spinner, uses stderr.
         this.loadOutput();
         // Load up the Winston logging, which uses stderr, too.
@@ -71,6 +74,13 @@ class Miles {
     } catch (e) {
       this.handleError(e);
     }
+  }
+
+  /**
+   * Loads the input manager.
+   */
+  loadInput() {
+    this.input = new Input();
   }
 
   /**
@@ -111,6 +121,7 @@ class Miles {
    * Adds global options to Commander.
    */
   addGlobalOptions() {
+    this.program.passThroughOptions();
     this.program.option(
       "-v, --verbose",
       "Increases the verbosity of logs sent to stderr. Can be specified up to three times.",
