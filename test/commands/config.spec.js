@@ -1,16 +1,16 @@
 const assert = require("assert");
 const sinon = require("sinon");
 const ConfigCommand = require("../../lib/commands/config");
-const Config = require("../../lib/config");
+const ConfigService = require("../../lib/services/config");
 const Output = require("../../lib/output");
 const Yaml = require("../../lib/yaml");
 
 describe("ConfigCommand", function () {
   describe("#get", function () {
     it("should call the get method", async function () {
-      const config = new Config();
-      const configStub = sinon.stub(config, "get").returns("foo:bar");
-      const miles = { config: config };
+      const configService = new ConfigService();
+      const configStub = sinon.stub(configService, "get").returns("foo:bar");
+      const miles = { configService, output: {} };
       const obj = new ConfigCommand(miles);
       const consoleStub = sinon.stub(console, "log");
       try {
@@ -28,22 +28,18 @@ describe("ConfigCommand", function () {
       const namespace = "foo";
       const key = "bar";
       const value = "biz";
-      const config = new Config();
+      const configService = new ConfigService();
       const output = new Output();
-      const configStub = sinon.stub(config, "set");
+      const configStub = sinon.stub(configService, "setAndSave");
+      configStub.returns(undefined);
       const outputStub = sinon
         .stub(output, "spinForPromise")
         .callsFake((promise, text) => promise);
-      const exportedValues = { foo: { bar: "biz" } };
-      const configStub2 = sinon.stub(config, "export").returns(exportedValues);
-      const yamlStub = sinon.createStubInstance(Yaml);
-      yamlStub.write.resolves(undefined);
-      const miles = { config: config, configStorage: yamlStub, output: output };
+      const miles = { configService, output };
       const obj = new ConfigCommand(miles);
       obj.set(namespace, key, value);
       assert.ok(configStub.calledWith(namespace, key, value));
       assert.ok(outputStub.calledOnce);
-      assert.deepEqual(yamlStub.write.getCall(0).args[0], exportedValues);
     });
   });
 });

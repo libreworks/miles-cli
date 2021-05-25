@@ -11,6 +11,7 @@ describe("Yaml", function () {
       const filename = "/tmp/foobar.yml";
       const obj = new Yaml(filename);
       assert.strictEqual(obj.filename, filename);
+      assert.strictEqual(obj.encoding, "utf8");
     });
     it("should use a different encoding", async function () {
       const filename = "/tmp/barfoo.yml";

@@ -9,6 +9,9 @@ const Config = require("./lib/config");
 const Yaml = require("./lib/yaml");
 const ConfigCommand = require("./lib/commands/config");
 const PluginCommand = require("./lib/commands/plugin");
+const ConfigService = require("./lib/services/config");
+
+const CONFIG_SERVICE = Symbol("configService");
 
 /**
  * The whole shebang.
@@ -32,6 +35,13 @@ class Miles {
    */
   static getDefaultConfigDir() {
     return xdg({ subdir: "miles" }).config;
+  }
+
+  /**
+   * @return {ConfigService} the configuration service.
+   */
+  get configService() {
+    return this[CONFIG_SERVICE];
   }
 
   /**
@@ -135,8 +145,7 @@ class Miles {
    */
   async loadConfig() {
     this.logger.debug("Loading configuration");
-    this.configStorage = new Yaml(path.join(this.configDir, "config.yaml"));
-    this.config = new Config(await this.configStorage.read());
+    this[CONFIG_SERVICE] = await ConfigService.create(this.configDir);
     this.logger.debug("Configuration is ready to go");
   }
 

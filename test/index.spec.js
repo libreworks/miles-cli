@@ -9,6 +9,7 @@ const Config = require("../lib/config");
 const Input = require("../lib/input");
 const Output = require("../lib/output");
 const Yaml = require("../lib/yaml");
+const ConfigService = require("../lib/services/config");
 const { Plugins, PluginManager } = require("../lib/plugins");
 const Miles = require("../");
 
@@ -97,24 +98,7 @@ describe("Miles", function () {
     });
   });
   describe("#loadConfig", function () {
-    it("should load config", async function () {
-      const { path: fpath, cleanup } = await tmp.dir({
-        unsafeCleanup: true,
-      });
-      try {
-        const program = sinon.createStubInstance(Command);
-        const object = new Miles(program);
-        let logstub = { debug: () => {} };
-        object.logger = logstub;
-        const logspy = sinon.spy(logstub, "debug");
-        await object.loadConfig();
-        assert.ok(object.config instanceof Config);
-        assert.ok(logspy.calledTwice);
-      } finally {
-        await cleanup();
-      }
-    });
-    it("should load configStorage", async function () {
+    it("should create a ConfigService", async () => {
       const { path: fpath, cleanup } = await tmp.dir({
         unsafeCleanup: true,
       });
@@ -125,12 +109,12 @@ describe("Miles", function () {
         object.logger = logstub;
         const logspy = sinon.spy(logstub, "debug");
         await object.loadConfig();
-        assert.ok(object.configStorage instanceof Yaml);
-        assert.ok(logspy.calledTwice);
+        assert.ok(object.configService instanceof ConfigService);
         assert.strictEqual(
-          object.configStorage.filename,
+          object.configService.filename,
           path.join(fpath, "config.yaml")
         );
+        assert.strictEqual(logspy.callCount, 2);
       } finally {
         await cleanup();
       }
