@@ -10,8 +10,10 @@ const Yaml = require("./lib/yaml");
 const ConfigCommand = require("./lib/commands/config");
 const PluginCommand = require("./lib/commands/plugin");
 const ConfigService = require("./lib/services/config");
+const SecretService = require("./lib/services/secret");
 
 const CONFIG_SERVICE = Symbol("configService");
+const SECRET_SERVICE = Symbol("secretService");
 
 /**
  * The whole shebang.
@@ -45,6 +47,13 @@ class Miles {
   }
 
   /**
+   * @return {SecretService} the secret values service.
+   */
+  get secretService() {
+    return this[SECRET_SERVICE];
+  }
+
+  /**
    * The journey of a thousand miles begins with a single step.
    */
   async start() {
@@ -66,7 +75,11 @@ class Miles {
         return; // Only needed in unit tests where we've stubbed process.exit.
       }
       // Batch load the asynchronous things.
-      await Promise.all([this.loadConfig(), this.loadPlugins()]);
+      await Promise.all([
+        this.loadConfig(),
+        this.loadSecrets(),
+        this.loadPlugins(),
+      ]);
       // Register commands with Commander.
       this.addCommands();
     } catch (startupError) {
@@ -147,6 +160,15 @@ class Miles {
     this.logger.debug("Loading configuration");
     this[CONFIG_SERVICE] = await ConfigService.create(this.configDir);
     this.logger.debug("Configuration is ready to go");
+  }
+
+  /**
+   * Sets up the configuration system.
+   */
+  async loadSecrets() {
+    this.logger.debug("Loading secrets");
+    this[SECRET_SERVICE] = await SecretService.create(this.configDir);
+    this.logger.debug("Secret values are ready to go");
   }
 
   /**
