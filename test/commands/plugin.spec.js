@@ -2,6 +2,7 @@ const assert = require("assert");
 const sinon = require("sinon");
 const Npm = require("../../lib/npm");
 const PluginCommand = require("../../lib/commands/plugin");
+const PluginService = require("../../lib/services/plugin");
 const Config = require("../../lib/config");
 const Output = require("../../lib/output");
 const Yaml = require("../../lib/yaml");
@@ -9,40 +10,33 @@ const Yaml = require("../../lib/yaml");
 describe("PluginCommand", function () {
   describe("#install", function () {
     it("should install the plugin", async function () {
-      let plugins = {
-        has: () => false,
-        add: () => {},
-        export: () => ["foobar"],
-      };
-      let pluginStorage = { write: async () => {} };
+      const pluginService = sinon.createStubInstance(PluginService);
       const output = new Output();
       const outputStub = sinon
         .stub(output, "spinForPromise")
         .callsFake((promise, text) => promise);
-      const miles = { plugins, pluginStorage, output };
+      const miles = { pluginService, output };
       let logstub = { info: () => {} };
       miles.logger = logstub;
       const logspy = sinon.spy(logstub, "info");
-      const pluginsspy = sinon.spy(plugins, "add");
-      const pluginstoragespy = sinon.spy(pluginStorage, "write");
       const obj = new PluginCommand(miles);
       const npmspy1 = sinon.stub(obj, "npmInstall");
       const consoleStub = sinon.stub(console, "log");
       try {
         await obj.add("foobar");
-        assert.ok(pluginsspy.calledOnce);
-        assert.ok(pluginsspy.calledWith("foobar"));
         assert.ok(logspy.calledOnce);
         assert.ok(npmspy1.calledWith("foobar"));
-        assert.ok(pluginstoragespy.calledWith({ plugins: ["foobar"] }));
+        assert.ok(pluginService.addAndSave.calledOnce);
+        assert.ok(pluginService.addAndSave.calledWith("foobar"));
         assert.ok(outputStub.calledTwice);
       } finally {
         consoleStub.restore();
       }
     });
     it("should fast fail if plugin installed", async function () {
-      let plugins = { has: () => true };
-      const miles = { plugins };
+      const pluginService = sinon.createStubInstance(PluginService);
+      pluginService.has.returns(true);
+      const miles = { pluginService };
       let logstub = { info: () => {}, warning: () => {} };
       miles.logger = logstub;
       const logspy2 = sinon.spy(logstub, "warning");
@@ -59,36 +53,37 @@ describe("PluginCommand", function () {
 
   describe("#uninstall", function () {
     it("should call the uninstall method", async function () {
-      let plugins = { has: () => true, remove: () => {}, export: () => [] };
-      let pluginStorage = { write: async () => {} };
+      const pluginService = sinon.createStubInstance(PluginService);
+      pluginService.has.returns(true);
       const output = new Output();
       const outputStub = sinon
         .stub(output, "spinForPromise")
         .callsFake((promise, text) => promise);
-      const miles = { plugins, pluginStorage, output };
+      const miles = { pluginService, output };
       let logstub = { info: () => {} };
       miles.logger = logstub;
       const logspy = sinon.spy(logstub, "info");
-      const pluginsspy = sinon.spy(plugins, "remove");
-      const pluginstoragespy = sinon.spy(pluginStorage, "write");
       const obj = new PluginCommand(miles);
       const npmspy1 = sinon.stub(obj, "npmUninstall");
       const consoleStub = sinon.stub(console, "log");
+      const expected = "foobar";
       try {
-        await obj.remove("foobar");
+        await obj.remove(expected);
         assert.ok(logspy.calledOnce);
         assert.ok(outputStub.calledTwice);
-        assert.ok(pluginsspy.calledOnce);
-        assert.ok(pluginsspy.calledWith("foobar"));
-        assert.ok(npmspy1.calledWith("foobar"));
-        assert.ok(pluginstoragespy.calledWith({ plugins: [] }));
+        assert.ok(pluginService.has.calledOnce);
+        assert.ok(pluginService.has.calledWith());
+        assert.ok(pluginService.removeAndSave.calledOnce);
+        assert.ok(pluginService.removeAndSave.calledWith(expected));
+        assert.ok(npmspy1.calledWith(expected));
       } finally {
         consoleStub.restore();
       }
     });
     it("should fast fail if plugin uninstalled", async function () {
-      let plugins = { has: () => false };
-      const miles = { plugins };
+      const pluginService = sinon.createStubInstance(PluginService);
+      pluginService.has.returns(false);
+      const miles = { pluginService };
       let logstub = { info: () => {}, warning: () => {} };
       miles.logger = logstub;
       const logspy2 = sinon.spy(logstub, "warning");

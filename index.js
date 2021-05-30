@@ -10,8 +10,12 @@ const Yaml = require("./lib/yaml");
 const ConfigCommand = require("./lib/commands/config");
 const PluginCommand = require("./lib/commands/plugin");
 const ConfigService = require("./lib/services/config");
+const PluginService = require("./lib/services/plugin");
+const SecretService = require("./lib/services/secret");
 
 const CONFIG_SERVICE = Symbol("configService");
+const PLUGIN_SERVICE = Symbol("pluginService");
+const SECRET_SERVICE = Symbol("secretService");
 
 /**
  * The whole shebang.
@@ -45,6 +49,20 @@ class Miles {
   }
 
   /**
+   * @return {PluginService} the plugin service.
+   */
+  get pluginService() {
+    return this[PLUGIN_SERVICE];
+  }
+
+  /**
+   * @return {SecretService} the secret values service.
+   */
+  get secretService() {
+    return this[SECRET_SERVICE];
+  }
+
+  /**
    * The journey of a thousand miles begins with a single step.
    */
   async start() {
@@ -66,7 +84,11 @@ class Miles {
         return; // Only needed in unit tests where we've stubbed process.exit.
       }
       // Batch load the asynchronous things.
-      await Promise.all([this.loadConfig(), this.loadPlugins()]);
+      await Promise.all([
+        this.loadConfig(),
+        this.loadSecrets(),
+        this.loadPlugins(),
+      ]);
       // Register commands with Commander.
       this.addCommands();
     } catch (startupError) {
@@ -150,16 +172,23 @@ class Miles {
   }
 
   /**
+   * Sets up the configuration system.
+   */
+  async loadSecrets() {
+    this.logger.debug("Loading secrets");
+    this[SECRET_SERVICE] = await SecretService.create(this.configDir);
+    this.logger.debug("Secret values are ready to go");
+  }
+
+  /**
    * Sets up the plugin system.
    */
   async loadPlugins() {
     this.logger.debug("Loading plugin configuration");
-    this.pluginStorage = new Yaml(path.join(this.configDir, "plugins.yaml"));
-    this.plugins = new Plugins(await this.pluginStorage.read());
+    this[PLUGIN_SERVICE] = await PluginService.create(this.configDir);
     this.logger.debug("Plugin configuration is ready to go");
     this.logger.debug("Instantiating plugin objects");
-    this.pluginManager = new PluginManager(this);
-    await this.pluginManager.load();
+    this.pluginManager = await PluginManager.create(this);
     this.logger.debug("Plugin objects are ready to go");
   }
 

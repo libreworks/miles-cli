@@ -10,6 +10,8 @@ const Input = require("../lib/input");
 const Output = require("../lib/output");
 const Yaml = require("../lib/yaml");
 const ConfigService = require("../lib/services/config");
+const PluginService = require("../lib/services/plugin");
+const SecretService = require("../lib/services/secret");
 const { Plugins, PluginManager } = require("../lib/plugins");
 const Miles = require("../");
 
@@ -40,7 +42,7 @@ describe("Miles", function () {
     });
   });
   describe("#loadPlugins", function () {
-    it("should load plugins", async function () {
+    it("should load plugin service", async function () {
       const { path: fpath, cleanup } = await tmp.dir({
         unsafeCleanup: true,
       });
@@ -51,29 +53,8 @@ describe("Miles", function () {
         object.logger = logstub;
         const logspy = sinon.spy(logstub, "debug");
         await object.loadPlugins();
-        assert.ok(object.plugins instanceof Plugins);
+        assert.ok(object.pluginService instanceof PluginService);
         assert.strictEqual(logspy.callCount, 4);
-      } finally {
-        await cleanup();
-      }
-    });
-    it("should load plugin storage", async function () {
-      const { path: fpath, cleanup } = await tmp.dir({
-        unsafeCleanup: true,
-      });
-      try {
-        const program = sinon.createStubInstance(Command);
-        const object = new Miles(program, fpath);
-        let logstub = { debug: () => {} };
-        object.logger = logstub;
-        const logspy = sinon.spy(logstub, "debug");
-        await object.loadPlugins();
-        assert.ok(object.pluginStorage instanceof Yaml);
-        assert.strictEqual(logspy.callCount, 4);
-        assert.strictEqual(
-          object.pluginStorage.filename,
-          path.join(fpath, "plugins.yaml")
-        );
       } finally {
         await cleanup();
       }
@@ -90,7 +71,6 @@ describe("Miles", function () {
         const logspy = sinon.spy(logstub, "debug");
         await object.loadPlugins();
         assert.ok(object.pluginManager instanceof PluginManager);
-        assert.strictEqual(object.pluginManager.miles, object);
         assert.strictEqual(logspy.callCount, 4);
       } finally {
         await cleanup();
@@ -113,6 +93,29 @@ describe("Miles", function () {
         assert.strictEqual(
           object.configService.filename,
           path.join(fpath, "config.yaml")
+        );
+        assert.strictEqual(logspy.callCount, 2);
+      } finally {
+        await cleanup();
+      }
+    });
+  });
+  describe("#loadSecrets", function () {
+    it("should create a SecretService", async () => {
+      const { path: fpath, cleanup } = await tmp.dir({
+        unsafeCleanup: true,
+      });
+      try {
+        const program = sinon.createStubInstance(Command);
+        const object = new Miles(program, fpath);
+        let logstub = { debug: () => {} };
+        object.logger = logstub;
+        const logspy = sinon.spy(logstub, "debug");
+        await object.loadSecrets();
+        assert.ok(object.secretService instanceof SecretService);
+        assert.strictEqual(
+          object.secretService.filename,
+          path.join(fpath, "secrets.yaml")
         );
         assert.strictEqual(logspy.callCount, 2);
       } finally {
@@ -297,6 +300,7 @@ describe("Miles", function () {
         mock.expects("addGlobalOptions").once();
         mock.expects("loadLogger").once();
         mock.expects("loadPlugins").atMost(1);
+        mock.expects("loadSecrets").atMost(1);
         mock.expects("loadConfig").once().throws(error);
         mock.expects("handleError").once().withArgs(error);
         await object.start();
@@ -314,6 +318,7 @@ describe("Miles", function () {
         const object = new Miles(program, fpath);
         const mock = sinon.mock(object);
         mock.expects("loadConfig").once();
+        mock.expects("loadSecrets").once();
         mock.expects("loadInput").once();
         mock.expects("loadOutput").once();
         mock.expects("addCommands").once();

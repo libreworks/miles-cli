@@ -63,4 +63,21 @@ describe("Yaml", function () {
       }
     });
   });
+
+  describe("#chmod", function () {
+    it("should chmod the file", async function () {
+      const { path: fpath, fd, cleanup } = await tmp.file();
+      try {
+        await fs.writeFile(fpath, "abc:\n    def: ghi");
+        const obj = new Yaml(fpath);
+        await obj.chmod(0o600);
+        const stats = await fs.stat(fpath);
+        const unixFilePermissions =
+          "0" + (stats.mode & parseInt("777", 8)).toString(8);
+        assert.strictEqual(unixFilePermissions, "0600");
+      } finally {
+        await cleanup();
+      }
+    });
+  });
 });
