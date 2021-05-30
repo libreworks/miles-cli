@@ -10,9 +10,11 @@ const Yaml = require("./lib/yaml");
 const ConfigCommand = require("./lib/commands/config");
 const PluginCommand = require("./lib/commands/plugin");
 const ConfigService = require("./lib/services/config");
+const PluginService = require("./lib/services/plugin");
 const SecretService = require("./lib/services/secret");
 
 const CONFIG_SERVICE = Symbol("configService");
+const PLUGIN_SERVICE = Symbol("pluginService");
 const SECRET_SERVICE = Symbol("secretService");
 
 /**
@@ -44,6 +46,13 @@ class Miles {
    */
   get configService() {
     return this[CONFIG_SERVICE];
+  }
+
+  /**
+   * @return {PluginService} the plugin service.
+   */
+  get pluginService() {
+    return this[PLUGIN_SERVICE];
   }
 
   /**
@@ -176,12 +185,10 @@ class Miles {
    */
   async loadPlugins() {
     this.logger.debug("Loading plugin configuration");
-    this.pluginStorage = new Yaml(path.join(this.configDir, "plugins.yaml"));
-    this.plugins = new Plugins(await this.pluginStorage.read());
+    this[PLUGIN_SERVICE] = await PluginService.create(this.configDir);
     this.logger.debug("Plugin configuration is ready to go");
     this.logger.debug("Instantiating plugin objects");
-    this.pluginManager = new PluginManager(this);
-    await this.pluginManager.load();
+    this.pluginManager = await PluginManager.create(this);
     this.logger.debug("Plugin objects are ready to go");
   }
 

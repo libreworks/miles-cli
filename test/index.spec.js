@@ -10,6 +10,7 @@ const Input = require("../lib/input");
 const Output = require("../lib/output");
 const Yaml = require("../lib/yaml");
 const ConfigService = require("../lib/services/config");
+const PluginService = require("../lib/services/plugin");
 const SecretService = require("../lib/services/secret");
 const { Plugins, PluginManager } = require("../lib/plugins");
 const Miles = require("../");
@@ -41,7 +42,7 @@ describe("Miles", function () {
     });
   });
   describe("#loadPlugins", function () {
-    it("should load plugins", async function () {
+    it("should load plugin service", async function () {
       const { path: fpath, cleanup } = await tmp.dir({
         unsafeCleanup: true,
       });
@@ -52,29 +53,8 @@ describe("Miles", function () {
         object.logger = logstub;
         const logspy = sinon.spy(logstub, "debug");
         await object.loadPlugins();
-        assert.ok(object.plugins instanceof Plugins);
+        assert.ok(object.pluginService instanceof PluginService);
         assert.strictEqual(logspy.callCount, 4);
-      } finally {
-        await cleanup();
-      }
-    });
-    it("should load plugin storage", async function () {
-      const { path: fpath, cleanup } = await tmp.dir({
-        unsafeCleanup: true,
-      });
-      try {
-        const program = sinon.createStubInstance(Command);
-        const object = new Miles(program, fpath);
-        let logstub = { debug: () => {} };
-        object.logger = logstub;
-        const logspy = sinon.spy(logstub, "debug");
-        await object.loadPlugins();
-        assert.ok(object.pluginStorage instanceof Yaml);
-        assert.strictEqual(logspy.callCount, 4);
-        assert.strictEqual(
-          object.pluginStorage.filename,
-          path.join(fpath, "plugins.yaml")
-        );
       } finally {
         await cleanup();
       }
@@ -91,7 +71,6 @@ describe("Miles", function () {
         const logspy = sinon.spy(logstub, "debug");
         await object.loadPlugins();
         assert.ok(object.pluginManager instanceof PluginManager);
-        assert.strictEqual(object.pluginManager.miles, object);
         assert.strictEqual(logspy.callCount, 4);
       } finally {
         await cleanup();
