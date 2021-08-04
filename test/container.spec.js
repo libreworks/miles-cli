@@ -8,7 +8,7 @@ describe("container.Provider", () => {
       const name = "foobar";
       const factory = () => {
         return new Map();
-      }
+      };
       const tags = ["a", "b", "c"];
       const obj = new Provider(name, factory, tags);
       assert.strictEqual(obj.name, name);
@@ -44,9 +44,9 @@ describe("container.Provider", () => {
           const actual = await obj.provide(container);
         },
         {
-          name: 'Error',
-          message: 'Circular dependency detected'
-        },
+          name: "Error",
+          message: "Circular dependency detected",
+        }
       );
     });
   });
@@ -65,7 +65,7 @@ describe("container.Builder", () => {
       const obj = new Builder();
       const returned = obj.constant("foo", "bar");
       assert.strictEqual(returned, obj);
-    })
+    });
     it("should register a constant", async () => {
       const name = "foobar";
       const value = new Set([123, 456]);
@@ -81,7 +81,7 @@ describe("container.Builder", () => {
       const obj = new Builder();
       const returned = obj.register("foo", () => "bar");
       assert.strictEqual(returned, obj);
-    })
+    });
     it("should register a factory", async () => {
       const name = "foobar";
       const value = new Set([123, 456]);
@@ -98,7 +98,7 @@ describe("container.Builder", () => {
       const spy = sinon.spy(function (c) {
         return value;
       });
-      obj.register(name, spy, ['@eager']);
+      obj.register(name, spy, ["@eager"]);
       const container = await obj.build();
       assert.ok(spy.calledOnce);
       assert.ok(spy.calledWith(container));
@@ -165,11 +165,11 @@ describe("container.Container", () => {
       providers.set("bar", provider2);
       providers.set("baz", provider3);
       const obj = new Container(providers);
-      const actual = await obj.getAll(['foo', 'bar']);
+      const actual = await obj.getAll(["foo", "bar"]);
       assert.strictEqual(actual.length, 2);
-      assert.ok(actual.includes('foo'));
-      assert.ok(actual.includes('bar'));
-      assert.ok(!actual.includes('baz'));
+      assert.ok(actual.includes("foo"));
+      assert.ok(actual.includes("bar"));
+      assert.ok(!actual.includes("baz"));
     });
   });
   describe("#getAllTagged", () => {
@@ -179,19 +179,19 @@ describe("container.Container", () => {
       assert.deepEqual(actual, []);
     });
     it("should return tagged component", async () => {
-      const provider1 = new Provider("foo", () => "foo", ['test']);
-      const provider2 = new Provider("bar", () => "bar", ['test']);
-      const provider3 = new Provider("baz", () => "baz", ['aoeuhtns']);
+      const provider1 = new Provider("foo", () => "foo", ["test"]);
+      const provider2 = new Provider("bar", () => "bar", ["test"]);
+      const provider3 = new Provider("baz", () => "baz", ["aoeuhtns"]);
       const providers = new Map();
       providers.set("foo", provider1);
       providers.set("bar", provider2);
       providers.set("baz", provider3);
       const obj = new Container(providers);
-      const actual = await obj.getAllTagged('test');
+      const actual = await obj.getAllTagged("test");
       assert.strictEqual(actual.length, 2);
-      assert.ok(actual.includes('foo'));
-      assert.ok(actual.includes('bar'));
-      assert.ok(!actual.includes('baz'));
+      assert.ok(actual.includes("foo"));
+      assert.ok(actual.includes("bar"));
+      assert.ok(!actual.includes("baz"));
     });
   });
   describe("#has", () => {
@@ -216,7 +216,7 @@ describe("container.Container", () => {
     it("should behave like a good EventTarget", async () => {
       const listener = sinon.spy();
       const object = new Container(new Map());
-      const event = {"type":"testing"};
+      const event = { type: "testing" };
       object.addEventListener("testing", listener);
       object.dispatchEvent(event);
       assert.ok(listener.calledOnce);
