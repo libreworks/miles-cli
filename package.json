@@ -19,7 +19,7 @@
     "url": "https://github.com/libreworks/miles-cli.git"
   },
   "engines": {
-    "node": ">=8"
+    "node": ">=10.13.0"
   },
   "keywords": [
     "miles"
@@ -46,9 +46,9 @@
   },
   "dependencies": {
     "@folder/xdg": "^3.1.2",
-    "@ungap/event-target": "^0.2.2",
     "commander": "^7.2.0",
     "cross-spawn": "^7.0.3",
+    "event-target-shim": "^6.0.2",
     "fs.promises": "^0.1.2",
     "global-modules": "^2.0.0",
     "mkdirp": "^1.0.4",

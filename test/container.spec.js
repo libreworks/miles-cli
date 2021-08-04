@@ -1,5 +1,6 @@
 const assert = require("assert");
 const sinon = require("sinon");
+const { EventTarget, Event } = require("event-target-shim");
 const { Builder, Container, Provider } = require("../lib/container");
 
 describe("container.Provider", () => {
@@ -216,7 +217,7 @@ describe("container.Container", () => {
     it("should behave like a good EventTarget", async () => {
       const listener = sinon.spy();
       const object = new Container(new Map());
-      const event = { type: "testing" };
+      const event = new Event("testing");
       object.addEventListener("testing", listener);
       object.dispatchEvent(event);
       assert.ok(listener.calledOnce);
