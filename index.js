@@ -3,6 +3,7 @@ const xdg = require("@folder/xdg");
 const winston = require("winston");
 const ora = require("ora");
 const { PluginManager, Plugins } = require("./lib/plugins");
+const ErrorHandler = require("./lib/errorHandler");
 const Input = require("./lib/input");
 const Output = require("./lib/output");
 const Config = require("./lib/config");
@@ -13,6 +14,7 @@ const ConfigService = require("./lib/services/config");
 const PluginService = require("./lib/services/plugin");
 const SecretService = require("./lib/services/secret");
 
+const ERROR_HANDLER = Symbol("errorHandler");
 const CONFIG_SERVICE = Symbol("configService");
 const PLUGIN_SERVICE = Symbol("pluginService");
 const SECRET_SERVICE = Symbol("secretService");
@@ -63,6 +65,13 @@ class Miles {
   }
 
   /**
+   * @return {ErrorHandler} the error handler.
+   */
+  get errorHandler() {
+    return this[ERROR_HANDLER];
+  }
+
+  /**
    * The journey of a thousand miles begins with a single step.
    */
   async start() {
@@ -77,6 +86,8 @@ class Miles {
         this.loadOutput();
         // Load up the Winston logging, which uses stderr, too.
         this.loadLogger();
+        // Loads up the error handler.
+        this.loadErrorHandler();
       } catch (bootstrapError) {
         // Logging isn't set up yet, so just write error to stderr and exit.
         console.error(bootstrapError);
@@ -92,7 +103,7 @@ class Miles {
       // Register commands with Commander.
       this.addCommands();
     } catch (startupError) {
-      // Any errors which occur after the "bootstrap" can be handled here.
+      // Any errors which occur during the batch load can be handled here.
       this.handleError(startupError);
     }
   }
@@ -150,6 +161,14 @@ class Miles {
   }
 
   /**
+   * Loads the error handler.
+   */
+  loadErrorHandler() {
+    this[ERROR_HANDLER] = new ErrorHandler(this.output.spinner, this.logger);
+    this[ERROR_HANDLER].register();
+  }
+
+  /**
    * Adds global options to Commander.
    */
   addGlobalOptions() {
@@ -196,14 +215,7 @@ class Miles {
    * @ignore
    */
   handleError(e) {
-    const { name, message } = e;
-    if (this.output && this.output.spinner && this.output.spinner.isSpinning) {
-      this.output.spinner.fail();
-    }
-    this.logger.error("An error has occurred");
-    this.logger.error(`[${name}] ${message}`);
-    this.logger.debug(e.stack);
-    process.exit(1);
+    this[ERROR_HANDLER].handleError(e);
   }
 
   /**
