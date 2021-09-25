@@ -8,6 +8,7 @@ const Input = require("./lib/input");
 const Output = require("./lib/output");
 const Config = require("./lib/config");
 const Yaml = require("./lib/yaml");
+const { Builder } = require("./lib/container");
 const ConfigCommand = require("./lib/commands/config");
 const PluginCommand = require("./lib/commands/plugin");
 const ConfigService = require("./lib/services/config");
@@ -15,6 +16,8 @@ const PluginService = require("./lib/services/plugin");
 const SecretService = require("./lib/services/secret");
 
 const ERROR_HANDLER = Symbol("errorHandler");
+const CONTAINER = Symbol("container");
+
 const CONFIG_SERVICE = Symbol("configService");
 const PLUGIN_SERVICE = Symbol("pluginService");
 const SECRET_SERVICE = Symbol("secretService");
@@ -72,6 +75,13 @@ class Miles {
   }
 
   /**
+   * @return {Container} the dependency injection container.
+   */
+  get container() {
+    return this[CONTAINER];
+  }
+
+  /**
    * The journey of a thousand miles begins with a single step.
    */
   async start() {
@@ -94,18 +104,46 @@ class Miles {
         process.exit(1);
         return; // Only needed in unit tests where we've stubbed process.exit.
       }
-      // Batch load the asynchronous things.
-      await Promise.all([
-        this.loadConfig(),
-        this.loadSecrets(),
-        this.loadPlugins(),
-      ]);
+      // Build the dependency injection container.
+      this[CONTAINER] = await this.buildContainer();
+
+      // Remove this once dependency injection for plugins is finished.
+      await this.manuallyStartPlugins();
+
       // Register commands with Commander.
       this.addCommands();
     } catch (startupError) {
       // Any errors which occur during the batch load can be handled here.
       this.handleError(startupError);
     }
+  }
+
+  /**
+   * Build the dependency injection container.
+   *
+   * @return {Container} The built container.
+   */
+  async buildContainer() {
+    const builder = new Builder(this.logger);
+
+    builder.register('configService', async () => await ConfigService.create(this.configDir));
+    builder.register('secretService', async () => await SecretService.create(this.configDir));
+    builder.register('pluginService', async () => await PluginService.create(this.configDir));
+
+    return await builder.build();
+  }
+
+  /**
+   * Just a temporary method while we figure out plugin dependency injection.
+   * @ignore
+   */
+  async manuallyStartPlugins() {
+    const result = await this.container.getAll(['configService', 'secretService', 'pluginService']);
+    const [ configService, secretService, pluginService ] = result;
+    this[CONFIG_SERVICE] = configService;
+    this[SECRET_SERVICE] = secretService;
+    this[PLUGIN_SERVICE] = pluginService;
+    await this.loadPlugins();
   }
 
   /**
@@ -182,30 +220,9 @@ class Miles {
   }
 
   /**
-   * Sets up the configuration system.
-   */
-  async loadConfig() {
-    this.logger.debug("Loading configuration");
-    this[CONFIG_SERVICE] = await ConfigService.create(this.configDir);
-    this.logger.debug("Configuration is ready to go");
-  }
-
-  /**
-   * Sets up the configuration system.
-   */
-  async loadSecrets() {
-    this.logger.debug("Loading secrets");
-    this[SECRET_SERVICE] = await SecretService.create(this.configDir);
-    this.logger.debug("Secret values are ready to go");
-  }
-
-  /**
    * Sets up the plugin system.
    */
   async loadPlugins() {
-    this.logger.debug("Loading plugin configuration");
-    this[PLUGIN_SERVICE] = await PluginService.create(this.configDir);
-    this.logger.debug("Plugin configuration is ready to go");
     this.logger.debug("Instantiating plugin objects");
     this.pluginManager = await PluginManager.create(this);
     this.logger.debug("Plugin objects are ready to go");

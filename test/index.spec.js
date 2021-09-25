@@ -42,23 +42,6 @@ describe("Miles", function () {
     });
   });
   describe("#loadPlugins", function () {
-    it("should load plugin service", async function () {
-      const { path: fpath, cleanup } = await tmp.dir({
-        unsafeCleanup: true,
-      });
-      try {
-        const program = sinon.createStubInstance(Command);
-        const object = new Miles(program, fpath);
-        let logstub = { debug: () => {} };
-        object.logger = logstub;
-        const logspy = sinon.spy(logstub, "debug");
-        await object.loadPlugins();
-        assert.ok(object.pluginService instanceof PluginService);
-        assert.strictEqual(logspy.callCount, 4);
-      } finally {
-        await cleanup();
-      }
-    });
     it("should load plugin manager", async function () {
       const { path: fpath, cleanup } = await tmp.dir({
         unsafeCleanup: true,
@@ -66,58 +49,19 @@ describe("Miles", function () {
       try {
         const program = sinon.createStubInstance(Command);
         const object = new Miles(program, fpath);
-        let logstub = { debug: () => {} };
+        const profiler = { done: () => {} };
+        let logstub = { debug: () => {}, info: () => {}, startTimer: () => profiler };
         object.logger = logstub;
         const logspy = sinon.spy(logstub, "debug");
+
+        // temporary
+        const container = await object.buildContainer();
+        sinon.stub(object, "container").get(() => container);
+        await object.manuallyStartPlugins();
+
         await object.loadPlugins();
         assert.ok(object.pluginManager instanceof PluginManager);
-        assert.strictEqual(logspy.callCount, 4);
-      } finally {
-        await cleanup();
-      }
-    });
-  });
-  describe("#loadConfig", function () {
-    it("should create a ConfigService", async () => {
-      const { path: fpath, cleanup } = await tmp.dir({
-        unsafeCleanup: true,
-      });
-      try {
-        const program = sinon.createStubInstance(Command);
-        const object = new Miles(program, fpath);
-        let logstub = { debug: () => {} };
-        object.logger = logstub;
-        const logspy = sinon.spy(logstub, "debug");
-        await object.loadConfig();
-        assert.ok(object.configService instanceof ConfigService);
-        assert.strictEqual(
-          object.configService.filename,
-          path.join(fpath, "config.yaml")
-        );
-        assert.strictEqual(logspy.callCount, 2);
-      } finally {
-        await cleanup();
-      }
-    });
-  });
-  describe("#loadSecrets", function () {
-    it("should create a SecretService", async () => {
-      const { path: fpath, cleanup } = await tmp.dir({
-        unsafeCleanup: true,
-      });
-      try {
-        const program = sinon.createStubInstance(Command);
-        const object = new Miles(program, fpath);
-        let logstub = { debug: () => {} };
-        object.logger = logstub;
-        const logspy = sinon.spy(logstub, "debug");
-        await object.loadSecrets();
-        assert.ok(object.secretService instanceof SecretService);
-        assert.strictEqual(
-          object.secretService.filename,
-          path.join(fpath, "secrets.yaml")
-        );
-        assert.strictEqual(logspy.callCount, 2);
+        assert.strictEqual(logspy.callCount, 6);
       } finally {
         await cleanup();
       }
@@ -197,9 +141,8 @@ describe("Miles", function () {
         mock.expects("addGlobalOptions").once();
         mock.expects("loadLogger").once();
         mock.expects("loadErrorHandler").once();
-        mock.expects("loadPlugins").atMost(1);
-        mock.expects("loadSecrets").atMost(1);
-        mock.expects("loadConfig").once().throws(error);
+        mock.expects("buildContainer").once();
+        mock.expects("manuallyStartPlugins").once().throws(error);
         mock.expects("handleError").once().withArgs(error);
         await object.start();
         mock.verify();
@@ -215,15 +158,14 @@ describe("Miles", function () {
         const program = sinon.createStubInstance(Command);
         const object = new Miles(program, fpath);
         const mock = sinon.mock(object);
-        mock.expects("loadConfig").once();
-        mock.expects("loadSecrets").once();
         mock.expects("loadInput").once();
         mock.expects("loadOutput").once();
         mock.expects("loadErrorHandler").once();
         mock.expects("addCommands").once();
         mock.expects("loadLogger").once();
         mock.expects("addGlobalOptions").once();
-        mock.expects("loadPlugins").once();
+        mock.expects("buildContainer").once();
+        mock.expects("manuallyStartPlugins").once();
         await object.start();
         mock.verify();
       } finally {
