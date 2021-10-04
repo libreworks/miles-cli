@@ -68,7 +68,7 @@ describe("PluginManager", function () {
       const object = await PluginManager.create(pluginService);
       const meta = new Map();
       meta.set("../test/stub-plugin", {
-        "version": "0.1.0",
+        version: "0.1.0",
       });
       assert.deepEqual(object.metadata, meta);
     });
@@ -79,15 +79,21 @@ describe("PluginManager", function () {
       const StubPlugin = require(pluginName);
       const logger = {};
       const builder = new Builder(logger);
-      const expected = await PluginManager.invokeBuilderVisitor(pluginName, builder);
-      assert.deepEqual(expected, {"version": "0.1.0"});
+      const expected = await PluginManager.invokeBuilderVisitor(
+        pluginName,
+        builder
+      );
+      assert.deepEqual(expected, { version: "0.1.0" });
     });
     it("should throw error for non-plugin 1", async () => {
       const logger = {};
       const builder = new Builder(logger);
       await assert.rejects(
         async () => {
-          const plugin = await PluginManager.invokeBuilderVisitor("winston", builder);
+          const plugin = await PluginManager.invokeBuilderVisitor(
+            "winston",
+            builder
+          );
         },
         {
           name: "TypeError",
@@ -101,7 +107,10 @@ describe("PluginManager", function () {
       const builder = new Builder(logger);
       await assert.rejects(
         async () => {
-          const plugin = await PluginManager.invokeBuilderVisitor("@folder/xdg", builder);
+          const plugin = await PluginManager.invokeBuilderVisitor(
+            "@folder/xdg",
+            builder
+          );
         },
         {
           name: "TypeError",
@@ -115,7 +124,10 @@ describe("PluginManager", function () {
       const builder = new Builder(logger);
       await assert.rejects(
         async () => {
-          const plugin = await PluginManager.invokeBuilderVisitor("../test/stub-not-plugin", builder);
+          const plugin = await PluginManager.invokeBuilderVisitor(
+            "../test/stub-not-plugin",
+            builder
+          );
         },
         {
           name: "TypeError",
