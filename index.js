@@ -2,12 +2,11 @@ const path = require("path");
 const xdg = require("@folder/xdg");
 const winston = require("winston");
 const ora = require("ora");
-const { PluginManager, Plugins } = require("./lib/plugins");
+const { PluginManager } = require("./lib/plugins");
 const ErrorHandler = require("./lib/errorHandler");
 const Input = require("./lib/input");
 const Output = require("./lib/output");
-const Config = require("./lib/config");
-const Yaml = require("./lib/yaml");
+const { registerCommands } = require("./lib/commander");
 const { Builder } = require("./lib/container");
 const ConfigCommand = require("./lib/commands/config");
 const PluginCommand = require("./lib/commands/plugin");
@@ -17,10 +16,6 @@ const SecretService = require("./lib/services/secret");
 
 const ERROR_HANDLER = Symbol("errorHandler");
 const CONTAINER = Symbol("container");
-
-const CONFIG_SERVICE = Symbol("configService");
-const PLUGIN_SERVICE = Symbol("pluginService");
-const SECRET_SERVICE = Symbol("secretService");
 
 /**
  * The whole shebang.
@@ -44,27 +39,6 @@ class Miles {
    */
   static getDefaultConfigDir() {
     return xdg({ subdir: "miles" }).config;
-  }
-
-  /**
-   * @return {ConfigService} the configuration service.
-   */
-  get configService() {
-    return this[CONFIG_SERVICE];
-  }
-
-  /**
-   * @return {PluginService} the plugin service.
-   */
-  get pluginService() {
-    return this[PLUGIN_SERVICE];
-  }
-
-  /**
-   * @return {SecretService} the secret values service.
-   */
-  get secretService() {
-    return this[SECRET_SERVICE];
   }
 
   /**
@@ -107,11 +81,8 @@ class Miles {
       // Build the dependency injection container.
       this[CONTAINER] = await this.buildContainer();
 
-      // Remove this once dependency injection for plugins is finished.
-      await this.manuallyStartPlugins();
-
       // Register commands with Commander.
-      this.addCommands();
+      await registerCommands(this.program, this[CONTAINER]);
     } catch (startupError) {
       // Any errors which occur during the batch load can be handled here.
       this.handleError(startupError);
@@ -125,25 +96,31 @@ class Miles {
    */
   async buildContainer() {
     const builder = new Builder(this.logger);
+    const pluginService = await PluginService.create(this.configDir);
+    const pluginManager = await PluginManager.create(pluginService, builder);
 
-    builder.register('configService', async () => await ConfigService.create(this.configDir));
-    builder.register('secretService', async () => await SecretService.create(this.configDir));
-    builder.register('pluginService', async () => await PluginService.create(this.configDir));
+    builder.constant("logger", this.logger);
+    builder.constant("commander", this.program);
+    builder.constant("core.input", this.input);
+    builder.constant("core.output", this.output);
+    builder.constant("core.pluginManager", pluginManager);
+    builder.constant("pluginService", pluginService);
+    builder.register(
+      "configService",
+      async () => await ConfigService.create(this.configDir)
+    );
+    builder.register(
+      "secretService",
+      async () => await SecretService.create(this.configDir)
+    );
+    builder.register("core.command.config", ConfigCommand.create, [
+      "commander-visitor",
+    ]);
+    builder.register("core.command.plugin", PluginCommand.create, [
+      "commander-visitor",
+    ]);
 
     return await builder.build();
-  }
-
-  /**
-   * Just a temporary method while we figure out plugin dependency injection.
-   * @ignore
-   */
-  async manuallyStartPlugins() {
-    const result = await this.container.getAll(['configService', 'secretService', 'pluginService']);
-    const [ configService, secretService, pluginService ] = result;
-    this[CONFIG_SERVICE] = configService;
-    this[SECRET_SERVICE] = secretService;
-    this[PLUGIN_SERVICE] = pluginService;
-    await this.loadPlugins();
   }
 
   /**
@@ -182,7 +159,10 @@ class Miles {
     const levels = winston.config.syslog.levels;
     const levelNames = Object.keys(levels);
     const consoleTransport = new winston.transports.Console({
-      format: winston.format.cli({ levels }),
+      format: winston.format.combine(
+        winston.format.cli({ levels }),
+        this.output.createFormatter()
+      ),
       stderrLevels: levelNames,
     });
     this.logTransports = [
@@ -220,30 +200,10 @@ class Miles {
   }
 
   /**
-   * Sets up the plugin system.
-   */
-  async loadPlugins() {
-    this.logger.debug("Instantiating plugin objects");
-    this.pluginManager = await PluginManager.create(this);
-    this.logger.debug("Plugin objects are ready to go");
-  }
-
-  /**
    * @ignore
    */
   handleError(e) {
     this[ERROR_HANDLER].handleError(e);
-  }
-
-  /**
-   * Registers the commands with Commander.
-   */
-  addCommands() {
-    const commands = [ConfigCommand, PluginCommand];
-    commands
-      .map((clz) => new clz(this))
-      .forEach((cmd) => cmd.addCommands(this.program));
-    this.pluginManager.addCommands(this.program);
   }
 }
 

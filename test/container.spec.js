@@ -5,7 +5,7 @@ const { EventTarget, Event } = require("event-target-shim");
 const { Builder, Container, Provider } = require("../lib/container");
 
 describe("container.Provider", () => {
-  const transport = new winston.transports.Console({silent: true});
+  const transport = new winston.transports.Console({ silent: true });
   beforeEach(() => {
     winston.add(transport);
   });
@@ -40,32 +40,11 @@ describe("container.Provider", () => {
       actual = await obj.provide(container);
       assert.strictEqual(actual, component);
     });
-    it("should detect circular dependencies", async () => {
-      const container = {};
-      const component = new Set();
-      const name = "foobar";
-      const factory = () => {
-        return container.provider.provide(container);
-      };
-      const tags = ["a", "b", "c"];
-      const logger = winston;
-      const obj = new Provider(logger, name, factory, tags);
-      container.provider = obj;
-      await assert.rejects(
-        async () => {
-          const actual = await obj.provide(container);
-        },
-        {
-          name: "Error",
-          message: "Circular dependency detected",
-        }
-      );
-    });
   });
 });
 
 describe("container.Builder", () => {
-  const transport = new winston.transports.Console({silent: true});
+  const transport = new winston.transports.Console({ silent: true });
   beforeEach(() => {
     winston.add(transport);
   });
@@ -147,7 +126,7 @@ describe("container.Builder", () => {
 });
 
 describe("container.Container", () => {
-  const transport = new winston.transports.Console({silent: true});
+  const transport = new winston.transports.Console({ silent: true });
   beforeEach(() => {
     winston.add(transport);
   });

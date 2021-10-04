@@ -1,6 +1,6 @@
 const assert = require("assert");
 const sinon = require("sinon");
-const ErrorHandler = require('../lib/errorHandler.js');
+const ErrorHandler = require("../lib/errorHandler.js");
 
 describe("ErrorHandler", () => {
   describe("#register", () => {
@@ -44,7 +44,7 @@ describe("ErrorHandler", () => {
       const spinner = { isSpinning: true, fail: () => {} };
       const logger = { error: () => {}, debug: () => {} };
       const object = new ErrorHandler(spinner, logger);
-      const stub = sinon.stub(object, 'handleError');
+      const stub = sinon.stub(object, "handleError");
       stub.returns(true);
       object.handleRejection(error, Promise.resolve(true));
       assert.ok(stub.calledOnce);
@@ -59,7 +59,7 @@ describe("ErrorHandler", () => {
       const exitStub = sinon.stub(process, "exit");
       try {
         const object = new ErrorHandler(spinner, logger);
-        const failSpinnerStub = sinon.stub(object, 'failSpinner');
+        const failSpinnerStub = sinon.stub(object, "failSpinner");
         const promise = Promise.reject(error);
         promise.catch(() => {});
         object.handleRejection(error, promise);
@@ -82,7 +82,7 @@ describe("ErrorHandler", () => {
       const exitStub = sinon.stub(process, "exit");
       try {
         const object = new ErrorHandler(spinner, logger);
-        const failSpinnerStub = sinon.stub(object, 'failSpinner');
+        const failSpinnerStub = sinon.stub(object, "failSpinner");
         object.handleError(error);
         assert.ok(failSpinnerStub.calledOnce);
         assert.ok(stub1.calledTwice);

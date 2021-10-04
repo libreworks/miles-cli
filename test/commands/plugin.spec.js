@@ -15,11 +15,9 @@ describe("PluginCommand", function () {
       const outputStub = sinon
         .stub(output, "spinForPromise")
         .callsFake((promise, text) => promise);
-      const miles = { pluginService, output };
       let logstub = { info: () => {} };
-      miles.logger = logstub;
       const logspy = sinon.spy(logstub, "info");
-      const obj = new PluginCommand(miles);
+      const obj = new PluginCommand(logstub, output, pluginService);
       const npmspy1 = sinon.stub(obj, "npmInstall");
       const consoleStub = sinon.stub(console, "log");
       try {
@@ -36,11 +34,10 @@ describe("PluginCommand", function () {
     it("should fast fail if plugin installed", async function () {
       const pluginService = sinon.createStubInstance(PluginService);
       pluginService.has.returns(true);
-      const miles = { pluginService };
+      const output = new Output();
       let logstub = { info: () => {}, warning: () => {} };
-      miles.logger = logstub;
       const logspy2 = sinon.spy(logstub, "warning");
-      const obj = new PluginCommand(miles);
+      const obj = new PluginCommand(logstub, output, pluginService);
       const consoleStub = sinon.stub(console, "log");
       try {
         await obj.add("foobar");
@@ -59,11 +56,9 @@ describe("PluginCommand", function () {
       const outputStub = sinon
         .stub(output, "spinForPromise")
         .callsFake((promise, text) => promise);
-      const miles = { pluginService, output };
       let logstub = { info: () => {} };
-      miles.logger = logstub;
       const logspy = sinon.spy(logstub, "info");
-      const obj = new PluginCommand(miles);
+      const obj = new PluginCommand(logstub, output, pluginService);
       const npmspy1 = sinon.stub(obj, "npmUninstall");
       const consoleStub = sinon.stub(console, "log");
       const expected = "foobar";
@@ -83,11 +78,9 @@ describe("PluginCommand", function () {
     it("should fast fail if plugin uninstalled", async function () {
       const pluginService = sinon.createStubInstance(PluginService);
       pluginService.has.returns(false);
-      const miles = { pluginService };
       let logstub = { info: () => {}, warning: () => {} };
-      miles.logger = logstub;
       const logspy2 = sinon.spy(logstub, "warning");
-      const obj = new PluginCommand(miles);
+      const obj = new PluginCommand(logstub, {}, pluginService);
       const consoleStub = sinon.stub(console, "log");
       try {
         await obj.remove("foobar");
@@ -99,14 +92,12 @@ describe("PluginCommand", function () {
   });
   describe("#npmInstall", () => {
     it("should bomb out early", async () => {
-      const miles = {};
       let logstub = { debug: () => {} };
-      miles.logger = logstub;
       const logspy = sinon.spy(logstub, "debug");
       const npm = new Npm();
       const stub = sinon.stub(npm, "getMissingPackages");
       stub.returns([]);
-      const obj = new PluginCommand(miles, npm);
+      const obj = new PluginCommand(logstub, {}, {}, npm);
       const pluginName = "foobar";
       const actual = await obj.npmInstall(pluginName);
       assert.ok(stub.calledOnce);
@@ -114,16 +105,14 @@ describe("PluginCommand", function () {
       assert.strictEqual(actual, undefined);
     });
     it("should call npm to install", async () => {
-      const miles = {};
       let logstub = { debug: () => {} };
-      miles.logger = logstub;
       const logspy = sinon.spy(logstub, "debug");
       const npm = new Npm();
       const stub = sinon.stub(npm, "install");
       const stub2 = sinon.stub(npm, "getMissingPackages");
       const spawnResults = undefined;
       stub.resolves(spawnResults);
-      const obj = new PluginCommand(miles, npm);
+      const obj = new PluginCommand(logstub, {}, {}, npm);
       const pluginName = "foobar";
       stub2.returns([pluginName]);
       const actual = await obj.npmInstall(pluginName);
@@ -132,9 +121,7 @@ describe("PluginCommand", function () {
       assert.strictEqual(actual, spawnResults);
     });
     it("should call npm to install and handle error", async () => {
-      const miles = {};
       let logstub = { debug: () => {} };
-      miles.logger = logstub;
       const logspy = sinon.spy(logstub, "debug");
       const npm = new Npm();
       const stub = sinon.stub(npm, "install");
@@ -148,7 +135,7 @@ describe("PluginCommand", function () {
       const spawnError = new Error("npm exited with a non-zero error code (1)");
       spawnError.result = spawnResults;
       stub.rejects(spawnError);
-      const obj = new PluginCommand(miles, npm);
+      const obj = new PluginCommand(logstub, {}, {}, npm);
       const pluginName = "foobar";
       stub2.returns([pluginName]);
       await assert.rejects(() => obj.npmInstall(pluginName), spawnError);
@@ -158,15 +145,13 @@ describe("PluginCommand", function () {
   });
   describe("#npmUninstall", () => {
     it("should call npm to uninstall", async () => {
-      const miles = {};
       let logstub = { debug: () => {} };
-      miles.logger = logstub;
       const logspy = sinon.spy(logstub, "debug");
       const npm = new Npm();
       const stub = sinon.stub(npm, "uninstall");
       const spawnResults = undefined;
       stub.resolves(spawnResults);
-      const obj = new PluginCommand(miles, npm);
+      const obj = new PluginCommand(logstub, {}, {}, npm);
       const pluginName = "foobar";
       const actual = await obj.npmUninstall(pluginName);
       assert.strictEqual(actual, spawnResults);
@@ -174,9 +159,7 @@ describe("PluginCommand", function () {
       assert.strictEqual(stub.firstCall.args[0], pluginName);
     });
     it("should call npm to uninstall and handle error", async () => {
-      const miles = {};
       let logstub = { debug: () => {} };
-      miles.logger = logstub;
       const logspy = sinon.spy(logstub, "debug");
       const npm = new Npm();
       const stub = sinon.stub(npm, "uninstall");
@@ -189,7 +172,7 @@ describe("PluginCommand", function () {
       const spawnError = new Error("npm exited with a non-zero error code (1)");
       spawnError.result = spawnResults;
       stub.rejects(spawnError);
-      const obj = new PluginCommand(miles, npm);
+      const obj = new PluginCommand(logstub, {}, {}, npm);
       const pluginName = "foobar";
       await assert.rejects(() => obj.npmUninstall(pluginName), spawnError);
       assert.ok(stub.calledOnce);
@@ -197,9 +180,7 @@ describe("PluginCommand", function () {
   });
   describe("#logResult", () => {
     it("should return early", async () => {
-      const miles = {};
       let logstub = { debug: () => {} };
-      miles.logger = logstub;
       const logspy = sinon.spy(logstub, "debug");
       const npm = new Npm();
       const spawnResults = {
@@ -208,14 +189,12 @@ describe("PluginCommand", function () {
         stdout: "",
         stderr: "Error",
       };
-      const obj = new PluginCommand(miles, npm);
+      const obj = new PluginCommand(logstub, {}, {}, npm);
       obj.logResult(undefined);
       assert.ok(logspy.notCalled);
     });
     it("should log stderr", async () => {
-      const miles = {};
       let logstub = { debug: () => {} };
-      miles.logger = logstub;
       const logspy = sinon.spy(logstub, "debug");
       const npm = new Npm();
       const spawnResults = {
@@ -224,14 +203,12 @@ describe("PluginCommand", function () {
         stdout: "",
         stderr: "Error",
       };
-      const obj = new PluginCommand(miles, npm);
+      const obj = new PluginCommand(logstub, {}, {}, npm);
       obj.logResult(spawnResults);
       assert.ok(logspy.calledThrice);
     });
     it("should log stdout", async () => {
-      const miles = {};
       let logstub = { debug: () => {} };
-      miles.logger = logstub;
       const logspy = sinon.spy(logstub, "debug");
       const npm = new Npm();
       const spawnResults = {
@@ -240,7 +217,7 @@ describe("PluginCommand", function () {
         stdout: "Ok",
         stderr: "",
       };
-      const obj = new PluginCommand(miles, npm);
+      const obj = new PluginCommand(logstub, {}, {}, npm);
       obj.logResult(spawnResults);
       assert.ok(logspy.calledTwice);
     });

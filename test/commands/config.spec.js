@@ -10,8 +10,8 @@ describe("ConfigCommand", function () {
     it("should call the get method", async function () {
       const configService = new ConfigService();
       const configStub = sinon.stub(configService, "get").returns("foo:bar");
-      const miles = { configService, output: {} };
-      const obj = new ConfigCommand(miles);
+      const output = new Output();
+      const obj = new ConfigCommand(configService, output);
       const consoleStub = sinon.stub(console, "log");
       try {
         obj.get("foo", "bar");
@@ -35,8 +35,7 @@ describe("ConfigCommand", function () {
       const outputStub = sinon
         .stub(output, "spinForPromise")
         .callsFake((promise, text) => promise);
-      const miles = { configService, output };
-      const obj = new ConfigCommand(miles);
+      const obj = new ConfigCommand(configService, output);
       obj.set(namespace, key, value);
       assert.ok(configStub.calledWith(namespace, key, value));
       assert.ok(outputStub.calledOnce);

@@ -2,6 +2,7 @@ const assert = require("assert");
 const { Command } = require("commander");
 const sinon = require("sinon");
 const { Plugins, PluginManager } = require("../lib/plugins");
+const { Builder } = require("../lib/container");
 const Yaml = require("../lib/yaml");
 const PluginService = require("../lib/services/plugin");
 const StubPlugin = require("./stub-plugin");
@@ -52,48 +53,76 @@ describe("Plugins", function () {
 describe("PluginManager", function () {
   describe("#construct", function () {
     it("should set properties", async function () {
-      const pluginInstances = [{ init: async () => {} }];
-      const object = new PluginManager(pluginInstances);
-      assert.deepStrictEqual(object.plugins, pluginInstances);
-    });
-    it("should accept defaults", async () => {
-      const pluginInstances = [];
-      const object = new PluginManager();
-      assert.deepStrictEqual(object.plugins, pluginInstances);
+      const meta = new Map();
+      meta.set("foo", {});
+      const object = new PluginManager(meta);
+      assert.deepStrictEqual(object.metadata, meta);
     });
   });
   describe("#create", function () {
     it("should load plugins", async function () {
-      const pluginStub = sinon.createStubInstance(Plugins);
-      const yamlStub = sinon.createStubInstance(Yaml);
-      const pluginService = new PluginService(yamlStub, pluginStub);
-      const exportStub = sinon.stub(pluginService, "export");
-      exportStub.returns(["../../test/stub-plugin"]);
-      const miles = { pluginService };
-      const object = await PluginManager.create(miles);
-      assert.deepEqual(object.plugins, [new StubPlugin()]);
+      const pluginService = sinon.createStubInstance(PluginService);
+      pluginService.export.returns(["../test/stub-plugin"]);
+      const logger = {};
+      const builder = new Builder(logger);
+      const object = await PluginManager.create(pluginService);
+      const meta = new Map();
+      meta.set("../test/stub-plugin", {
+        "version": "0.1.0",
+      });
+      assert.deepEqual(object.metadata, meta);
     });
   });
-  describe("#addCommands", () => {
-    it("should call commander", async () => {
-      const plugin = { addCommands: () => {} };
-      const object = new PluginManager([plugin]);
-      const pluginStub = sinon.stub(plugin, "addCommands");
-      const program = sinon.createStubInstance(Command);
-      object.addCommands(program);
-      assert.ok(pluginStub.calledWith(program));
+  describe("#invokeBuilderVisitor", () => {
+    it("should load plugins", async function () {
+      const pluginName = "../test/stub-plugin";
+      const StubPlugin = require(pluginName);
+      const logger = {};
+      const builder = new Builder(logger);
+      const expected = await PluginManager.invokeBuilderVisitor(pluginName, builder);
+      assert.deepEqual(expected, {"version": "0.1.0"});
     });
-    it("should not call commander for plugin without function", async () => {
-      const plugin = {
-        somethingElse: () => {
-          throw new Error("Should not be called");
+    it("should throw error for non-plugin 1", async () => {
+      const logger = {};
+      const builder = new Builder(logger);
+      await assert.rejects(
+        async () => {
+          const plugin = await PluginManager.invokeBuilderVisitor("winston", builder);
         },
-      };
-      const object = new PluginManager([plugin]);
-      const program = sinon.createStubInstance(Command);
-      assert.doesNotThrow(() => {
-        object.addCommands(program);
-      }, Error);
+        {
+          name: "TypeError",
+          message:
+            "Invalid Miles plugin: winston (default export must be a function)",
+        }
+      );
+    });
+    it("should throw error for non-plugin 2", async () => {
+      const logger = {};
+      const builder = new Builder(logger);
+      await assert.rejects(
+        async () => {
+          const plugin = await PluginManager.invokeBuilderVisitor("@folder/xdg", builder);
+        },
+        {
+          name: "TypeError",
+          message:
+            "Invalid Miles plugin: @folder/xdg (MILES_PLUGIN_API property missing)",
+        }
+      );
+    });
+    it("should throw error for plugin returning a class", async () => {
+      const logger = {};
+      const builder = new Builder(logger);
+      await assert.rejects(
+        async () => {
+          const plugin = await PluginManager.invokeBuilderVisitor("../test/stub-not-plugin", builder);
+        },
+        {
+          name: "TypeError",
+          message:
+            "Invalid Miles plugin: ../test/stub-not-plugin (default export cannot be a constructor)",
+        }
+      );
     });
   });
 });
