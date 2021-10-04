@@ -152,45 +152,4 @@ describe("PluginService", () => {
       assert.ok(yamlStub.write.calledWith(exportedValues));
     });
   });
-  describe("#instantiate", () => {
-    it("should load plugins", async function () {
-      const pluginStub = sinon.createStubInstance(Plugins);
-      const yamlStub = sinon.createStubInstance(Yaml);
-      const object = new PluginService(yamlStub, pluginStub);
-      const pluginName = "../../test/stub-plugin";
-      const StubPlugin = require(pluginName);
-      const expected = object.instantiate(pluginName);
-      assert.deepEqual(expected, new StubPlugin());
-    });
-    it("should throw error for non-plugin", async () => {
-      const pluginStub = sinon.createStubInstance(Plugins);
-      const yamlStub = sinon.createStubInstance(Yaml);
-      const object = new PluginService(yamlStub, pluginStub);
-      assert.throws(
-        () => {
-          const plugin = object.instantiate("assert");
-        },
-        {
-          name: "TypeError",
-          message:
-            "Invalid Miles plugin: assert (MILES_PLUGIN_API property missing)",
-        }
-      );
-    });
-    it("should throw error for plugin without init function", async () => {
-      const pluginStub = sinon.createStubInstance(Plugins);
-      const yamlStub = sinon.createStubInstance(Yaml);
-      const object = new PluginService(yamlStub, pluginStub);
-      assert.throws(
-        () => {
-          const plugin = object.instantiate("../../test/stub-not-plugin");
-        },
-        {
-          name: "TypeError",
-          message:
-            "Invalid Miles plugin: ../../test/stub-not-plugin (init function missing)",
-        }
-      );
-    });
-  });
 });

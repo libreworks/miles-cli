@@ -1,9 +1,9 @@
-class StubPlugin {
-  constructor() {}
+const stubPlugin = (builder) => {
+  return {
+    version: "0.1.0",
+  };
+};
 
-  async init() {}
-}
+stubPlugin.MILES_PLUGIN_API = 1;
 
-StubPlugin.MILES_PLUGIN_API = 1;
-
-module.exports = StubPlugin;
+module.exports = stubPlugin;

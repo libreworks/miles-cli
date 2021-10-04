@@ -2,20 +2,20 @@ const path = require("path");
 const xdg = require("@folder/xdg");
 const winston = require("winston");
 const ora = require("ora");
-const { PluginManager, Plugins } = require("./lib/plugins");
+const { PluginManager } = require("./lib/plugins");
+const ErrorHandler = require("./lib/errorHandler");
 const Input = require("./lib/input");
 const Output = require("./lib/output");
-const Config = require("./lib/config");
-const Yaml = require("./lib/yaml");
+const { registerCommands } = require("./lib/commander");
+const { Builder } = require("./lib/container");
 const ConfigCommand = require("./lib/commands/config");
 const PluginCommand = require("./lib/commands/plugin");
 const ConfigService = require("./lib/services/config");
 const PluginService = require("./lib/services/plugin");
 const SecretService = require("./lib/services/secret");
 
-const CONFIG_SERVICE = Symbol("configService");
-const PLUGIN_SERVICE = Symbol("pluginService");
-const SECRET_SERVICE = Symbol("secretService");
+const ERROR_HANDLER = Symbol("errorHandler");
+const CONTAINER = Symbol("container");
 
 /**
  * The whole shebang.
@@ -42,24 +42,17 @@ class Miles {
   }
 
   /**
-   * @return {ConfigService} the configuration service.
+   * @return {ErrorHandler} the error handler.
    */
-  get configService() {
-    return this[CONFIG_SERVICE];
+  get errorHandler() {
+    return this[ERROR_HANDLER];
   }
 
   /**
-   * @return {PluginService} the plugin service.
+   * @return {Container} the dependency injection container.
    */
-  get pluginService() {
-    return this[PLUGIN_SERVICE];
-  }
-
-  /**
-   * @return {SecretService} the secret values service.
-   */
-  get secretService() {
-    return this[SECRET_SERVICE];
+  get container() {
+    return this[CONTAINER];
   }
 
   /**
@@ -77,24 +70,57 @@ class Miles {
         this.loadOutput();
         // Load up the Winston logging, which uses stderr, too.
         this.loadLogger();
+        // Loads up the error handler.
+        this.loadErrorHandler();
       } catch (bootstrapError) {
         // Logging isn't set up yet, so just write error to stderr and exit.
         console.error(bootstrapError);
         process.exit(1);
         return; // Only needed in unit tests where we've stubbed process.exit.
       }
-      // Batch load the asynchronous things.
-      await Promise.all([
-        this.loadConfig(),
-        this.loadSecrets(),
-        this.loadPlugins(),
-      ]);
+      // Build the dependency injection container.
+      this[CONTAINER] = await this.buildContainer();
+
       // Register commands with Commander.
-      this.addCommands();
+      await registerCommands(this.program, this[CONTAINER]);
     } catch (startupError) {
-      // Any errors which occur after the "bootstrap" can be handled here.
+      // Any errors which occur during the batch load can be handled here.
       this.handleError(startupError);
     }
+  }
+
+  /**
+   * Build the dependency injection container.
+   *
+   * @return {Container} The built container.
+   */
+  async buildContainer() {
+    const builder = new Builder(this.logger);
+    const pluginService = await PluginService.create(this.configDir);
+    const pluginManager = await PluginManager.create(pluginService, builder);
+
+    builder.constant("logger", this.logger);
+    builder.constant("commander", this.program);
+    builder.constant("core.input", this.input);
+    builder.constant("core.output", this.output);
+    builder.constant("core.pluginManager", pluginManager);
+    builder.constant("pluginService", pluginService);
+    builder.register(
+      "configService",
+      async () => await ConfigService.create(this.configDir)
+    );
+    builder.register(
+      "secretService",
+      async () => await SecretService.create(this.configDir)
+    );
+    builder.register("core.command.config", ConfigCommand.create, [
+      "commander-visitor",
+    ]);
+    builder.register("core.command.plugin", PluginCommand.create, [
+      "commander-visitor",
+    ]);
+
+    return await builder.build();
   }
 
   /**
@@ -133,7 +159,10 @@ class Miles {
     const levels = winston.config.syslog.levels;
     const levelNames = Object.keys(levels);
     const consoleTransport = new winston.transports.Console({
-      format: winston.format.cli({ levels }),
+      format: winston.format.combine(
+        winston.format.cli({ levels }),
+        this.output.createFormatter()
+      ),
       stderrLevels: levelNames,
     });
     this.logTransports = [
@@ -150,6 +179,14 @@ class Miles {
   }
 
   /**
+   * Loads the error handler.
+   */
+  loadErrorHandler() {
+    this[ERROR_HANDLER] = new ErrorHandler(this.output.spinner, this.logger);
+    this[ERROR_HANDLER].register();
+  }
+
+  /**
    * Adds global options to Commander.
    */
   addGlobalOptions() {
@@ -163,58 +200,10 @@ class Miles {
   }
 
   /**
-   * Sets up the configuration system.
-   */
-  async loadConfig() {
-    this.logger.debug("Loading configuration");
-    this[CONFIG_SERVICE] = await ConfigService.create(this.configDir);
-    this.logger.debug("Configuration is ready to go");
-  }
-
-  /**
-   * Sets up the configuration system.
-   */
-  async loadSecrets() {
-    this.logger.debug("Loading secrets");
-    this[SECRET_SERVICE] = await SecretService.create(this.configDir);
-    this.logger.debug("Secret values are ready to go");
-  }
-
-  /**
-   * Sets up the plugin system.
-   */
-  async loadPlugins() {
-    this.logger.debug("Loading plugin configuration");
-    this[PLUGIN_SERVICE] = await PluginService.create(this.configDir);
-    this.logger.debug("Plugin configuration is ready to go");
-    this.logger.debug("Instantiating plugin objects");
-    this.pluginManager = await PluginManager.create(this);
-    this.logger.debug("Plugin objects are ready to go");
-  }
-
-  /**
    * @ignore
    */
   handleError(e) {
-    const { name, message } = e;
-    if (this.output && this.output.spinner && this.output.spinner.isSpinning) {
-      this.output.spinner.fail();
-    }
-    this.logger.error("An error has occurred");
-    this.logger.error(`[${name}] ${message}`);
-    this.logger.debug(e.stack);
-    process.exit(1);
-  }
-
-  /**
-   * Registers the commands with Commander.
-   */
-  addCommands() {
-    const commands = [ConfigCommand, PluginCommand];
-    commands
-      .map((clz) => new clz(this))
-      .forEach((cmd) => cmd.addCommands(this.program));
-    this.pluginManager.addCommands(this.program);
+    this[ERROR_HANDLER].handleError(e);
   }
 }
 
