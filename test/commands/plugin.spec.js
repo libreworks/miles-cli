@@ -3,7 +3,7 @@ const sinon = require("sinon");
 const Npm = require("../../lib/npm");
 const PluginCommand = require("../../lib/commands/plugin");
 const PluginService = require("../../lib/services/plugin");
-const Config = require("../../lib/config");
+const Config = require("../../lib/config/value-set");
 const OutputService = require("../../lib/io/output-service");
 const Yaml = require("../../lib/io/yaml");
 

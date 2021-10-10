@@ -1,7 +1,7 @@
 const assert = require("assert");
 const sinon = require("sinon");
-const ConfigCommand = require("../../lib/commands/config");
-const ConfigService = require("../../lib/services/config");
+const ConfigCommand = require("../../lib/config/command");
+const ConfigService = require("../../lib/config/service");
 const OutputService = require("../../lib/io/output-service");
 const Yaml = require("../../lib/io/yaml");
 

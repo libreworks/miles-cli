@@ -9,9 +9,9 @@ const { createLogger } = require("./lib/io/logs");
 const OutputService = require("./lib/io/output-service");
 const { registerCommands } = require("./lib/commander");
 const { Builder } = require("./lib/container");
-const ConfigCommand = require("./lib/commands/config");
+const ConfigCommand = require("./lib/config/command");
 const PluginCommand = require("./lib/commands/plugin");
-const ConfigService = require("./lib/services/config");
+const ConfigService = require("./lib/config/service");
 const PluginService = require("./lib/services/plugin");
 const SecretService = require("./lib/services/secret");
 

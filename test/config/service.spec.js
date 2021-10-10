@@ -2,8 +2,8 @@ const assert = require("assert");
 const path = require("path");
 const sinon = require("sinon");
 const tmp = require("tmp-promise");
-const ConfigService = require("../../lib/services/config");
-const Config = require("../../lib/config");
+const ConfigService = require("../../lib/config/service");
+const Config = require("../../lib/config/value-set");
 const Yaml = require("../../lib/io/yaml");
 
 describe("ConfigService", () => {
