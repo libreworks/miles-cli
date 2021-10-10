@@ -3,7 +3,7 @@ const tmp = require("tmp-promise");
 const path = require("path");
 const os = require("os");
 const fs = require("fs.promises");
-const Yaml = require("../lib/yaml");
+const Yaml = require("../../lib/io/yaml");
 
 describe("Yaml", function () {
   describe("#construct", function () {

@@ -1,6 +1,6 @@
 const assert = require("assert");
 const sinon = require("sinon");
-const ErrorHandler = require("../lib/errorHandler.js");
+const ErrorHandler = require("../lib/error-handler");
 
 describe("ErrorHandler", () => {
   describe("#register", () => {

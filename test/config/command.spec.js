@@ -1,17 +1,17 @@
 const assert = require("assert");
 const sinon = require("sinon");
-const ConfigCommand = require("../../lib/commands/config");
-const ConfigService = require("../../lib/services/config");
-const Output = require("../../lib/output");
-const Yaml = require("../../lib/yaml");
+const ConfigCommand = require("../../lib/config/command");
+const ConfigService = require("../../lib/config/service");
+const OutputService = require("../../lib/io/output-service");
+const Yaml = require("../../lib/io/yaml");
 
 describe("ConfigCommand", function () {
   describe("#get", function () {
     it("should call the get method", async function () {
       const configService = new ConfigService();
       const configStub = sinon.stub(configService, "get").returns("foo:bar");
-      const output = new Output();
-      const obj = new ConfigCommand(configService, output);
+      const outputService = new OutputService();
+      const obj = new ConfigCommand(configService, outputService);
       const consoleStub = sinon.stub(console, "log");
       try {
         obj.get("foo", "bar");
@@ -29,13 +29,13 @@ describe("ConfigCommand", function () {
       const key = "bar";
       const value = "biz";
       const configService = new ConfigService();
-      const output = new Output();
+      const outputService = new OutputService();
       const configStub = sinon.stub(configService, "setAndSave");
       configStub.returns(undefined);
       const outputStub = sinon
-        .stub(output, "spinForPromise")
+        .stub(outputService, "spinForPromise")
         .callsFake((promise, text) => promise);
-      const obj = new ConfigCommand(configService, output);
+      const obj = new ConfigCommand(configService, outputService);
       obj.set(namespace, key, value);
       assert.ok(configStub.calledWith(namespace, key, value));
       assert.ok(outputStub.calledOnce);

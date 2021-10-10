@@ -5,15 +5,15 @@ const tmp = require("tmp-promise");
 const path = require("path");
 const ora = require("ora");
 const xdg = require("@folder/xdg");
-const Config = require("../lib/config");
+const Config = require("../lib/config/value-set");
 const { Container } = require("../lib/container");
-const Input = require("../lib/input");
-const Output = require("../lib/output");
-const Yaml = require("../lib/yaml");
-const ConfigService = require("../lib/services/config");
-const PluginService = require("../lib/services/plugin");
-const SecretService = require("../lib/services/secret");
-const { Plugins, PluginManager } = require("../lib/plugins");
+const OutputService = require("../lib/io/output-service");
+const Yaml = require("../lib/io/yaml");
+const ConfigService = require("../lib/config/service");
+const SecretService = require("../lib/secret/service");
+const PluginService = require("../lib/plugin/service");
+const ActivationSet = require("../lib/plugin/activation-set");
+const PluginManager = require("../lib/plugin/manager");
 const Miles = require("../");
 
 describe("Miles", function () {
@@ -42,21 +42,12 @@ describe("Miles", function () {
       assert.ok(stub.calledWith(thrown));
     });
   });
-  describe("#loadInput", () => {
-    it("should create an Input object", async () => {
+  describe("#loadSpinner", () => {
+    it("should create a Spinner object", async () => {
       const program = sinon.createStubInstance(Command);
       const object = new Miles(program);
-      object.loadInput();
-      assert.ok(object.input instanceof Input);
-    });
-  });
-  describe("#loadOutput", () => {
-    it("should create an Output object", async () => {
-      const program = sinon.createStubInstance(Command);
-      const object = new Miles(program);
-      object.loadOutput();
-      assert.ok(object.output instanceof Output);
-      assert.deepEqual(object.output.spinner, ora({ spinner: "dots2" }));
+      object.loadSpinner();
+      assert.deepEqual(object.spinner, ora({ spinner: "dots2" }));
     });
   });
   describe("#addGlobalOptions", function () {
@@ -125,8 +116,7 @@ describe("Miles", function () {
         const mock = sinon.mock(object);
         const container = sinon.createStubInstance(Container);
         container.getAllTagged.returns([]);
-        mock.expects("loadInput").once();
-        mock.expects("loadOutput").once();
+        mock.expects("loadSpinner").once();
         mock.expects("loadErrorHandler").once();
         mock.expects("loadLogger").once();
         mock.expects("addGlobalOptions").once();
