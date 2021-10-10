@@ -125,25 +125,25 @@ class Miles {
     builder.constant("logger", this[LOGGER]);
     builder.constant("commander", this[PROGRAM]);
     builder.constant("spinner", this[SPINNER]);
-    builder.constant("core.pluginManager", pluginManager);
-    builder.constant("pluginService", pluginService);
+    builder.constant("plugin.manager", pluginManager);
+    builder.constant("plugin.service", pluginService);
     builder.register("io.input-service", () => new InputService());
     builder.register("io.output-service", async (c) => {
       const spinner = await c.get("spinner");
       return new OutputService(spinner);
     });
     builder.register(
-      "configService",
+      "config.service",
       async () => await ConfigService.create(this.configDir)
     );
     builder.register(
-      "secretService",
+      "secret.service",
       async () => await SecretService.create(this.configDir)
     );
-    builder.register("core.command.config", ConfigCommand.create, [
+    builder.register("config.command", ConfigCommand.create, [
       "commander-visitor",
     ]);
-    builder.register("core.command.plugin", PluginCommand.create, [
+    builder.register("plugin.command", PluginCommand.create, [
       "commander-visitor",
     ]);
 
