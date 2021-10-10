@@ -3,8 +3,8 @@ const xdg = require("@folder/xdg");
 const winston = require("winston");
 const ora = require("ora");
 const { PluginManager } = require("./lib/plugins");
-const ErrorHandler = require("./lib/errorHandler");
-const Input = require("./lib/input");
+const ErrorHandler = require("./lib/error-handler");
+const InputService = require("./lib/io/input-service");
 const Output = require("./lib/output");
 const { registerCommands } = require("./lib/commander");
 const { Builder } = require("./lib/container");
@@ -64,8 +64,6 @@ class Miles {
       try {
         // We need to register the global options, like logging verbosity.
         this.addGlobalOptions();
-        // This input object, uses stdin.
-        this.loadInput();
         // This output object, which handles the Ora spinner, uses stderr.
         this.loadOutput();
         // Load up the Winston logging, which uses stderr, too.
@@ -101,10 +99,10 @@ class Miles {
 
     builder.constant("logger", this.logger);
     builder.constant("commander", this.program);
-    builder.constant("core.input", this.input);
     builder.constant("core.output", this.output);
     builder.constant("core.pluginManager", pluginManager);
     builder.constant("pluginService", pluginService);
+    builder.register("io.input-service", () => new InputService());
     builder.register(
       "configService",
       async () => await ConfigService.create(this.configDir)
@@ -132,13 +130,6 @@ class Miles {
     } catch (e) {
       this.handleError(e);
     }
-  }
-
-  /**
-   * Loads the input manager.
-   */
-  loadInput() {
-    this.input = new Input();
   }
 
   /**

@@ -7,7 +7,6 @@ const ora = require("ora");
 const xdg = require("@folder/xdg");
 const Config = require("../lib/config");
 const { Container } = require("../lib/container");
-const Input = require("../lib/input");
 const Output = require("../lib/output");
 const Yaml = require("../lib/yaml");
 const ConfigService = require("../lib/services/config");
@@ -40,14 +39,6 @@ describe("Miles", function () {
       assert.ok(program.parseAsync.calledOnce);
       assert.ok(stub.calledOnce);
       assert.ok(stub.calledWith(thrown));
-    });
-  });
-  describe("#loadInput", () => {
-    it("should create an Input object", async () => {
-      const program = sinon.createStubInstance(Command);
-      const object = new Miles(program);
-      object.loadInput();
-      assert.ok(object.input instanceof Input);
     });
   });
   describe("#loadOutput", () => {
@@ -125,7 +116,6 @@ describe("Miles", function () {
         const mock = sinon.mock(object);
         const container = sinon.createStubInstance(Container);
         container.getAllTagged.returns([]);
-        mock.expects("loadInput").once();
         mock.expects("loadOutput").once();
         mock.expects("loadErrorHandler").once();
         mock.expects("loadLogger").once();

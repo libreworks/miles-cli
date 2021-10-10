@@ -1,14 +1,14 @@
 const assert = require("assert");
 const sinon = require("sinon");
-const Input = require("../lib/input");
 const promptly = require("promptly");
+const InputService = require("../../lib/io/input-service");
 
-describe("Input", () => {
+describe("InputService", () => {
   describe("#prompt", () => {
     it("should call promptly", async () => {
       const message = "foo";
       const validator = (a) => a;
-      const object = new Input();
+      const object = new InputService();
       const stub1 = sinon.stub(promptly, "prompt");
       try {
         await object.prompt(message, validator);
@@ -21,7 +21,7 @@ describe("Input", () => {
     it("should handle interrupt signal", async () => {
       const message = "foo";
       const validator = (a) => a;
-      const object = new Input();
+      const object = new InputService();
       const stub1 = sinon.stub(promptly, "prompt");
       stub1.throws("Error", "canceled");
       const stub2 = sinon.stub(process, "exit");
@@ -39,7 +39,7 @@ describe("Input", () => {
     it("should throw other errors", async () => {
       const message = "foo";
       const validator = (a) => a;
-      const object = new Input();
+      const object = new InputService();
       const stub1 = sinon.stub(promptly, "prompt");
       stub1.throws("Error", "Some other type of error");
       try {
@@ -53,7 +53,7 @@ describe("Input", () => {
   });
   describe("#getOptionOrPrompt", () => {
     it("should prompt if key not in the options array", async () => {
-      const object = new Input();
+      const object = new InputService();
       const expected = "bar";
       const options = {};
       const key = "foo";
@@ -72,7 +72,7 @@ describe("Input", () => {
       assert.ok(stub.calledWith(message, validator));
     });
     it("should prompt if key is undefined in the options array", async () => {
-      const object = new Input();
+      const object = new InputService();
       const expected = undefined;
       const options = { foo: expected };
       const key = "foo";
@@ -91,7 +91,7 @@ describe("Input", () => {
       assert.ok(stub.calledWith(message, validator));
     });
     it("should prompt if key is null in the options array", async () => {
-      const object = new Input();
+      const object = new InputService();
       const expected = null;
       const options = { foo: expected };
       const key = "foo";
@@ -110,7 +110,7 @@ describe("Input", () => {
       assert.ok(stub.calledWith(message, validator));
     });
     it("should invoke validator with value if in the options array", async () => {
-      const object = new Input();
+      const object = new InputService();
       const expected = "bar";
       const options = { foo: expected };
       const key = "foo";
@@ -123,7 +123,7 @@ describe("Input", () => {
       assert.ok(spy.calledWith(expected));
     });
     it("should invoke validator with string value if in the options array", async () => {
-      const object = new Input();
+      const object = new InputService();
       const expected = "123";
       const options = { foo: parseInt(expected) };
       const key = "foo";
