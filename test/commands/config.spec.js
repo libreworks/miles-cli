@@ -3,7 +3,7 @@ const sinon = require("sinon");
 const ConfigCommand = require("../../lib/commands/config");
 const ConfigService = require("../../lib/services/config");
 const Output = require("../../lib/output");
-const Yaml = require("../../lib/yaml");
+const Yaml = require("../../lib/io/yaml");
 
 describe("ConfigCommand", function () {
   describe("#get", function () {

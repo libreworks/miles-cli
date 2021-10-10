@@ -5,7 +5,7 @@ const PluginCommand = require("../../lib/commands/plugin");
 const PluginService = require("../../lib/services/plugin");
 const Config = require("../../lib/config");
 const Output = require("../../lib/output");
-const Yaml = require("../../lib/yaml");
+const Yaml = require("../../lib/io/yaml");
 
 describe("PluginCommand", function () {
   describe("#install", function () {

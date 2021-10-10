@@ -3,7 +3,7 @@ const { Command } = require("commander");
 const sinon = require("sinon");
 const { Plugins, PluginManager } = require("../lib/plugins");
 const { Builder } = require("../lib/container");
-const Yaml = require("../lib/yaml");
+const Yaml = require("../lib/io/yaml");
 const PluginService = require("../lib/services/plugin");
 const StubPlugin = require("./stub-plugin");
 

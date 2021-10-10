@@ -6,7 +6,7 @@ const tmp = require("tmp-promise");
 const YAML = require("yaml");
 const SecretService = require("../../lib/services/secret");
 const Config = require("../../lib/config");
-const Yaml = require("../../lib/yaml");
+const Yaml = require("../../lib/io/yaml");
 
 describe("SecretService", () => {
   describe("#constructor", () => {

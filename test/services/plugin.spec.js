@@ -4,7 +4,7 @@ const sinon = require("sinon");
 const tmp = require("tmp-promise");
 const PluginService = require("../../lib/services/plugin");
 const { Plugins } = require("../../lib/plugins");
-const Yaml = require("../../lib/yaml");
+const Yaml = require("../../lib/io/yaml");
 
 describe("PluginService", () => {
   describe("#constructor", () => {
