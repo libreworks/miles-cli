@@ -7,7 +7,7 @@ const ora = require("ora");
 const xdg = require("@folder/xdg");
 const Config = require("../lib/config");
 const { Container } = require("../lib/container");
-const Output = require("../lib/output");
+const OutputService = require("../lib/io/output-service");
 const Yaml = require("../lib/io/yaml");
 const ConfigService = require("../lib/services/config");
 const PluginService = require("../lib/services/plugin");
@@ -41,13 +41,12 @@ describe("Miles", function () {
       assert.ok(stub.calledWith(thrown));
     });
   });
-  describe("#loadOutput", () => {
-    it("should create an Output object", async () => {
+  describe("#loadSpinner", () => {
+    it("should create a Spinner object", async () => {
       const program = sinon.createStubInstance(Command);
       const object = new Miles(program);
-      object.loadOutput();
-      assert.ok(object.output instanceof Output);
-      assert.deepEqual(object.output.spinner, ora({ spinner: "dots2" }));
+      object.loadSpinner();
+      assert.deepEqual(object.spinner, ora({ spinner: "dots2" }));
     });
   });
   describe("#addGlobalOptions", function () {
@@ -116,7 +115,7 @@ describe("Miles", function () {
         const mock = sinon.mock(object);
         const container = sinon.createStubInstance(Container);
         container.getAllTagged.returns([]);
-        mock.expects("loadOutput").once();
+        mock.expects("loadSpinner").once();
         mock.expects("loadErrorHandler").once();
         mock.expects("loadLogger").once();
         mock.expects("addGlobalOptions").once();

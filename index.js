@@ -5,7 +5,8 @@ const ora = require("ora");
 const { PluginManager } = require("./lib/plugins");
 const ErrorHandler = require("./lib/error-handler");
 const InputService = require("./lib/io/input-service");
-const Output = require("./lib/output");
+const { createLogger } = require("./lib/io/logs");
+const OutputService = require("./lib/io/output-service");
 const { registerCommands } = require("./lib/commander");
 const { Builder } = require("./lib/container");
 const ConfigCommand = require("./lib/commands/config");
@@ -16,6 +17,9 @@ const SecretService = require("./lib/services/secret");
 
 const ERROR_HANDLER = Symbol("errorHandler");
 const CONTAINER = Symbol("container");
+const LOGGER = Symbol("logger");
+const PROGRAM = Symbol("program");
+const SPINNER = Symbol("spinner");
 
 /**
  * The whole shebang.
@@ -28,7 +32,7 @@ class Miles {
    * @param {string} [configDir] - Configuration directory.
    */
   constructor(program, configDir) {
-    this.program = program;
+    this[PROGRAM] = program;
     this.configDir = path.normalize(configDir || Miles.getDefaultConfigDir());
   }
 
@@ -56,31 +60,52 @@ class Miles {
   }
 
   /**
+   * @return {winston} the Winston logger.
+   */
+  get logger() {
+    return this[LOGGER];
+  }
+
+  /**
+   * @return {commander.Command} the Commander object.
+   */
+  get program() {
+    return this[PROGRAM];
+  }
+
+  /**
+   * @return {ora.Ora} the ora spinner.
+   */
+  get spinner() {
+    return this[SPINNER];
+  }
+
+  /**
    * The journey of a thousand miles begins with a single step.
    */
   async start() {
+    // This first try block is considered the "bootstrap" tasks
     try {
-      // This inner try block is considered the "bootstrap" tasks
-      try {
-        // We need to register the global options, like logging verbosity.
-        this.addGlobalOptions();
-        // This output object, which handles the Ora spinner, uses stderr.
-        this.loadOutput();
-        // Load up the Winston logging, which uses stderr, too.
-        this.loadLogger();
-        // Loads up the error handler.
-        this.loadErrorHandler();
-      } catch (bootstrapError) {
-        // Logging isn't set up yet, so just write error to stderr and exit.
-        console.error(bootstrapError);
-        process.exit(1);
-        return; // Only needed in unit tests where we've stubbed process.exit.
-      }
+      // We need to register the global options, like logging verbosity.
+      this.addGlobalOptions();
+      // Load up the Ora spinner, uses stderr.
+      this.loadSpinner();
+      // Load up the Winston logging, which uses stderr, too.
+      this.loadLogger();
+      // Loads up the error handler.
+      this.loadErrorHandler();
+    } catch (bootstrapError) {
+      // Logging isn't set up yet, so just write error to stderr and exit.
+      console.error(bootstrapError);
+      process.exit(1);
+      return; // Only needed in unit tests where we've stubbed process.exit.
+    }
+    try {
       // Build the dependency injection container.
       this[CONTAINER] = await this.buildContainer();
 
       // Register commands with Commander.
-      await registerCommands(this.program, this[CONTAINER]);
+      await registerCommands(this[PROGRAM], this[CONTAINER]);
     } catch (startupError) {
       // Any errors which occur during the batch load can be handled here.
       this.handleError(startupError);
@@ -93,16 +118,20 @@ class Miles {
    * @return {Container} The built container.
    */
   async buildContainer() {
-    const builder = new Builder(this.logger);
+    const builder = new Builder(this[LOGGER]);
     const pluginService = await PluginService.create(this.configDir);
     const pluginManager = await PluginManager.create(pluginService, builder);
 
-    builder.constant("logger", this.logger);
-    builder.constant("commander", this.program);
-    builder.constant("core.output", this.output);
+    builder.constant("logger", this[LOGGER]);
+    builder.constant("commander", this[PROGRAM]);
+    builder.constant("spinner", this[SPINNER]);
     builder.constant("core.pluginManager", pluginManager);
     builder.constant("pluginService", pluginService);
     builder.register("io.input-service", () => new InputService());
+    builder.register("io.output-service", async (c) => {
+      const spinner = await c.get('spinner');
+      return new OutputService(spinner);
+    });
     builder.register(
       "configService",
       async () => await ConfigService.create(this.configDir)
@@ -126,18 +155,17 @@ class Miles {
    */
   async parseCommand() {
     try {
-      await this.program.parseAsync();
+      await this[PROGRAM].parseAsync();
     } catch (e) {
       this.handleError(e);
     }
   }
 
   /**
-   * Loads the output manager.
+   * Loads the ora spinner.
    */
-  loadOutput() {
-    const spinner = ora({ spinner: "dots2" });
-    this.output = new Output(spinner);
+  loadSpinner() {
+    this[SPINNER] = ora({ spinner: "dots2" });
   }
 
   /**
@@ -146,34 +174,15 @@ class Miles {
    * We need to parse the verbosity so we can provide it to the stderr logger.
    */
   loadLogger() {
-    this.program.parse();
-    const levels = winston.config.syslog.levels;
-    const levelNames = Object.keys(levels);
-    const consoleTransport = new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.cli({ levels }),
-        this.output.createFormatter()
-      ),
-      stderrLevels: levelNames,
-    });
-    this.logTransports = [
-      this.output.createSpinnerAwareTransport(consoleTransport),
-    ];
-    const verbosity = this.program.opts().verbose;
-    this.logger = winston.createLogger({
-      levels: levels,
-      level: verbosity
-        ? levelNames.find((key) => levels[key] === verbosity)
-        : "warning",
-      transports: this.logTransports,
-    });
+    this[PROGRAM].parse();
+    this[LOGGER] = createLogger(this[SPINNER], this[PROGRAM].opts().verbose);
   }
 
   /**
    * Loads the error handler.
    */
-  loadErrorHandler() {
-    this[ERROR_HANDLER] = new ErrorHandler(this.output.spinner, this.logger);
+  loadErrorHandler(logger) {
+    this[ERROR_HANDLER] = new ErrorHandler(this[SPINNER], this[LOGGER]);
     this[ERROR_HANDLER].register();
   }
 
@@ -181,8 +190,8 @@ class Miles {
    * Adds global options to Commander.
    */
   addGlobalOptions() {
-    this.program.passThroughOptions();
-    this.program.option(
+    this[PROGRAM].passThroughOptions();
+    this[PROGRAM].option(
       "-v, --verbose",
       "Increases the verbosity of logs sent to stderr. Can be specified up to three times.",
       (dummy, previous) => previous + 1,

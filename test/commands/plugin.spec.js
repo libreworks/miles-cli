@@ -4,20 +4,20 @@ const Npm = require("../../lib/npm");
 const PluginCommand = require("../../lib/commands/plugin");
 const PluginService = require("../../lib/services/plugin");
 const Config = require("../../lib/config");
-const Output = require("../../lib/output");
+const OutputService = require("../../lib/io/output-service");
 const Yaml = require("../../lib/io/yaml");
 
 describe("PluginCommand", function () {
   describe("#install", function () {
     it("should install the plugin", async function () {
       const pluginService = sinon.createStubInstance(PluginService);
-      const output = new Output();
+      const outputService = new OutputService();
       const outputStub = sinon
-        .stub(output, "spinForPromise")
+        .stub(outputService, "spinForPromise")
         .callsFake((promise, text) => promise);
       let logstub = { info: () => {} };
       const logspy = sinon.spy(logstub, "info");
-      const obj = new PluginCommand(logstub, output, pluginService);
+      const obj = new PluginCommand(logstub, outputService, pluginService);
       const npmspy1 = sinon.stub(obj, "npmInstall");
       const consoleStub = sinon.stub(console, "log");
       try {
@@ -34,10 +34,10 @@ describe("PluginCommand", function () {
     it("should fast fail if plugin installed", async function () {
       const pluginService = sinon.createStubInstance(PluginService);
       pluginService.has.returns(true);
-      const output = new Output();
+      const outputService = new OutputService();
       let logstub = { info: () => {}, warning: () => {} };
       const logspy2 = sinon.spy(logstub, "warning");
-      const obj = new PluginCommand(logstub, output, pluginService);
+      const obj = new PluginCommand(logstub, outputService, pluginService);
       const consoleStub = sinon.stub(console, "log");
       try {
         await obj.add("foobar");
@@ -52,13 +52,13 @@ describe("PluginCommand", function () {
     it("should call the uninstall method", async function () {
       const pluginService = sinon.createStubInstance(PluginService);
       pluginService.has.returns(true);
-      const output = new Output();
+      const outputService = new OutputService();
       const outputStub = sinon
-        .stub(output, "spinForPromise")
+        .stub(outputService, "spinForPromise")
         .callsFake((promise, text) => promise);
       let logstub = { info: () => {} };
       const logspy = sinon.spy(logstub, "info");
-      const obj = new PluginCommand(logstub, output, pluginService);
+      const obj = new PluginCommand(logstub, outputService, pluginService);
       const npmspy1 = sinon.stub(obj, "npmUninstall");
       const consoleStub = sinon.stub(console, "log");
       const expected = "foobar";
