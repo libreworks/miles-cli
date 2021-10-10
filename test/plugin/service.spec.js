@@ -2,14 +2,14 @@ const assert = require("assert");
 const path = require("path");
 const sinon = require("sinon");
 const tmp = require("tmp-promise");
-const PluginService = require("../../lib/services/plugin");
-const { Plugins } = require("../../lib/plugins");
+const PluginService = require("../../lib/plugin/service");
+const ActivationSet = require("../../lib/plugin/activation-set");
 const Yaml = require("../../lib/io/yaml");
 
 describe("PluginService", () => {
   describe("#constructor", () => {
     it("should have functioning getters", async () => {
-      const pluginStub = sinon.createStubInstance(Plugins);
+      const pluginStub = sinon.createStubInstance(ActivationSet);
       const yamlStub = sinon.createStubInstance(Yaml);
       yamlStub.filename = "foobar";
       yamlStub.encoding = "utf16";
@@ -52,7 +52,7 @@ describe("PluginService", () => {
         add: () => {},
         export: () => [expected],
       };
-      const pluginStub = sinon.createStubInstance(Plugins);
+      const pluginStub = sinon.createStubInstance(ActivationSet);
       const yamlStub = sinon.createStubInstance(Yaml);
       const pluginsspy = sinon.spy(plugins, "has");
       const object = new PluginService(yamlStub, plugins);
@@ -69,7 +69,7 @@ describe("PluginService", () => {
         add: () => {},
         export: () => [expected],
       };
-      const pluginStub = sinon.createStubInstance(Plugins);
+      const pluginStub = sinon.createStubInstance(ActivationSet);
       const yamlStub = sinon.createStubInstance(Yaml);
       const pluginsspy = sinon.spy(plugins, "add");
       const object = new PluginService(yamlStub, plugins);
@@ -86,7 +86,7 @@ describe("PluginService", () => {
         remove: () => {},
         export: () => [expected],
       };
-      const pluginStub = sinon.createStubInstance(Plugins);
+      const pluginStub = sinon.createStubInstance(ActivationSet);
       const yamlStub = sinon.createStubInstance(Yaml);
       const pluginsspy = sinon.spy(plugins, "remove");
       const object = new PluginService(yamlStub, plugins);
@@ -97,7 +97,7 @@ describe("PluginService", () => {
   });
   describe("#addAndSave", () => {
     it("should call self methods", async () => {
-      const pluginStub = sinon.createStubInstance(Plugins);
+      const pluginStub = sinon.createStubInstance(ActivationSet);
       const yamlStub = sinon.createStubInstance(Yaml);
       const object = new PluginService(yamlStub, pluginStub);
       const stub1 = sinon.stub(object, "add");
@@ -111,7 +111,7 @@ describe("PluginService", () => {
   });
   describe("#removeAndSave", () => {
     it("should call self methods", async () => {
-      const pluginStub = sinon.createStubInstance(Plugins);
+      const pluginStub = sinon.createStubInstance(ActivationSet);
       const yamlStub = sinon.createStubInstance(Yaml);
       const object = new PluginService(yamlStub, pluginStub);
       const stub1 = sinon.stub(object, "remove");
@@ -125,7 +125,7 @@ describe("PluginService", () => {
       assert.ok(stub2.calledOnce);
     });
     it("should not call save if not installed", async () => {
-      const pluginStub = sinon.createStubInstance(Plugins);
+      const pluginStub = sinon.createStubInstance(ActivationSet);
       const yamlStub = sinon.createStubInstance(Yaml);
       const object = new PluginService(yamlStub, pluginStub);
       const stub1 = sinon.stub(object, "remove");
@@ -141,7 +141,7 @@ describe("PluginService", () => {
   });
   describe("#save", () => {
     it("should call self methods", async () => {
-      const pluginStub = sinon.createStubInstance(Plugins);
+      const pluginStub = sinon.createStubInstance(ActivationSet);
       const yamlStub = sinon.createStubInstance(Yaml);
       const object = new PluginService(yamlStub, pluginStub);
       const exportedValues = { installed: ["foobar"] };

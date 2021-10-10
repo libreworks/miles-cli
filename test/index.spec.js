@@ -10,9 +10,10 @@ const { Container } = require("../lib/container");
 const OutputService = require("../lib/io/output-service");
 const Yaml = require("../lib/io/yaml");
 const ConfigService = require("../lib/config/service");
-const PluginService = require("../lib/services/plugin");
+const PluginService = require("../lib/plugin/service");
 const SecretService = require("../lib/services/secret");
-const { Plugins, PluginManager } = require("../lib/plugins");
+const ActivationSet = require("../lib/plugin/activation-set");
+const PluginManager = require("../lib/plugin/manager");
 const Miles = require("../");
 
 describe("Miles", function () {

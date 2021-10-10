@@ -2,7 +2,7 @@ const path = require("path");
 const xdg = require("@folder/xdg");
 const winston = require("winston");
 const ora = require("ora");
-const { PluginManager } = require("./lib/plugins");
+const PluginManager = require("./lib/plugin/manager");
 const ErrorHandler = require("./lib/error-handler");
 const InputService = require("./lib/io/input-service");
 const { createLogger } = require("./lib/io/logs");
@@ -10,9 +10,9 @@ const OutputService = require("./lib/io/output-service");
 const { registerCommands } = require("./lib/commander");
 const { Builder } = require("./lib/container");
 const ConfigCommand = require("./lib/config/command");
-const PluginCommand = require("./lib/commands/plugin");
+const PluginCommand = require("./lib/plugin/command");
 const ConfigService = require("./lib/config/service");
-const PluginService = require("./lib/services/plugin");
+const PluginService = require("./lib/plugin/service");
 const SecretService = require("./lib/services/secret");
 
 const ERROR_HANDLER = Symbol("errorHandler");
@@ -129,7 +129,7 @@ class Miles {
     builder.constant("pluginService", pluginService);
     builder.register("io.input-service", () => new InputService());
     builder.register("io.output-service", async (c) => {
-      const spinner = await c.get('spinner');
+      const spinner = await c.get("spinner");
       return new OutputService(spinner);
     });
     builder.register(

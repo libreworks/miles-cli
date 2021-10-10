@@ -10,9 +10,9 @@ const {
 describe("logs", () => {
   describe("#createFormatter", () => {
     it("should return a Formatter", async () => {
-      const options = {"foo": "bar"};
+      const options = { foo: "bar" };
       const result = createFormatter(options);
-      assert.strictEqual(typeof result, 'object');
+      assert.strictEqual(typeof result, "object");
     });
   });
   describe("#createSpinnerAwareTransport", function () {
