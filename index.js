@@ -13,7 +13,7 @@ const ConfigCommand = require("./lib/config/command");
 const PluginCommand = require("./lib/plugin/command");
 const ConfigService = require("./lib/config/service");
 const PluginService = require("./lib/plugin/service");
-const SecretService = require("./lib/services/secret");
+const SecretService = require("./lib/secret/service");
 
 const ERROR_HANDLER = Symbol("errorHandler");
 const CONTAINER = Symbol("container");
@@ -60,7 +60,7 @@ class Miles {
   }
 
   /**
-   * @return {winston} the Winston logger.
+   * @return {winston.Logger} the Winston logger.
    */
   get logger() {
     return this[LOGGER];

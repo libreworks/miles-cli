@@ -4,14 +4,14 @@ const fs = require("fs.promises");
 const sinon = require("sinon");
 const tmp = require("tmp-promise");
 const YAML = require("yaml");
-const SecretService = require("../../lib/services/secret");
-const Config = require("../../lib/config/value-set");
+const SecretService = require("../../lib/secret/service");
+const ValueSet = require("../../lib/config/value-set");
 const Yaml = require("../../lib/io/yaml");
 
 describe("SecretService", () => {
   describe("#constructor", () => {
     it("should have functioning getters", async () => {
-      const configStub = sinon.createStubInstance(Config);
+      const configStub = sinon.createStubInstance(ValueSet);
       const yamlStub = sinon.createStubInstance(Yaml);
       yamlStub.filename = "foobar";
       yamlStub.encoding = "utf16";
@@ -60,7 +60,7 @@ describe("SecretService", () => {
       const namespace = "foo";
       const key = "bar";
       const expected = "baz";
-      const configStub = sinon.createStubInstance(Config);
+      const configStub = sinon.createStubInstance(ValueSet);
       configStub.get.returns(expected);
       const yamlStub = sinon.createStubInstance(Yaml);
       const object = new SecretService(yamlStub, configStub);
@@ -75,7 +75,7 @@ describe("SecretService", () => {
       const namespace = "foo";
       const key = "bar";
       const value = "baz";
-      const configStub = sinon.createStubInstance(Config);
+      const configStub = sinon.createStubInstance(ValueSet);
       const yamlStub = sinon.createStubInstance(Yaml);
       const object = new SecretService(yamlStub, configStub);
       object.set(namespace, key, value);
@@ -85,7 +85,7 @@ describe("SecretService", () => {
   });
   describe("#setAndSave", () => {
     it("should call self methods", async () => {
-      const configStub = sinon.createStubInstance(Config);
+      const configStub = sinon.createStubInstance(ValueSet);
       const yamlStub = sinon.createStubInstance(Yaml);
       const object = new SecretService(yamlStub, configStub);
       const stub1 = sinon.stub(object, "set");
@@ -101,7 +101,7 @@ describe("SecretService", () => {
   });
   describe("#save", () => {
     it("should call self methods", async () => {
-      const configStub = sinon.createStubInstance(Config);
+      const configStub = sinon.createStubInstance(ValueSet);
       const yamlStub = sinon.createStubInstance(Yaml);
       const object = new SecretService(yamlStub, configStub);
       const exportedValues = { foo: { bar: "baz" } };
