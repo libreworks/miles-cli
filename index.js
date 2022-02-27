@@ -9,6 +9,8 @@ const { createLogger } = require("./lib/io/logs");
 const OutputService = require("./lib/io/output-service");
 const { registerCommands } = require("./lib/commander");
 const { Builder } = require("./lib/container");
+const AuthService = require("./lib/auth/service");
+const AuthCommand = require("./lib/auth/command");
 const ConfigCommand = require("./lib/config/command");
 const PluginCommand = require("./lib/plugin/command");
 const ConfigService = require("./lib/config/service");
@@ -140,6 +142,10 @@ class Miles {
       "secret.service",
       async () => await SecretService.create(this.configDir)
     );
+    builder.register("auth.service", AuthService.create);
+    builder.register("auth.command", AuthCommand.create, [
+      "commander-visitor",
+    ]);
     builder.register("config.command", ConfigCommand.create, [
       "commander-visitor",
     ]);
