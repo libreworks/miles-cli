@@ -143,9 +143,7 @@ class Miles {
       async () => await SecretService.create(this.configDir)
     );
     builder.register("auth.service", AuthService.create);
-    builder.register("auth.command", AuthCommand.create, [
-      "commander-visitor",
-    ]);
+    builder.register("auth.command", AuthCommand.create, ["commander-visitor"]);
     builder.register("config.command", ConfigCommand.create, [
       "commander-visitor",
     ]);
