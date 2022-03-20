@@ -10,6 +10,30 @@ describe("OutputService", function () {
       assert.strictEqual(object.spinner, spinner);
     });
   });
+  describe("#error", () => {
+    it("should call console.error", async () => {
+      const object = new OutputService();
+      const consoleStub = sinon.stub(console, "error");
+      try {
+        object.error("foo");
+        assert.ok(consoleStub.calledWith("foo"));
+      } finally {
+        consoleStub.restore();
+      }
+    });
+  });
+  describe("#write", () => {
+    it("should call console.log", async () => {
+      const object = new OutputService();
+      const consoleStub = sinon.stub(console, "log");
+      try {
+        object.write("foobar");
+        assert.ok(consoleStub.calledWith("foobar"));
+      } finally {
+        consoleStub.restore();
+      }
+    });
+  });
   describe("#spinForPromise", function () {
     it("should call succeed on resolution", async () => {
       const spinner = {
