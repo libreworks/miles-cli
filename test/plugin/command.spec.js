@@ -1,5 +1,6 @@
 const assert = require("assert");
 const sinon = require("sinon");
+const { Command } = require("commander");
 const Npm = require("../../lib/npm");
 const PluginCommand = require("../../lib/plugin/command");
 const PluginService = require("../../lib/plugin/service");
@@ -8,6 +9,15 @@ const OutputService = require("../../lib/io/output-service");
 const Yaml = require("../../lib/io/yaml");
 
 describe("PluginCommand", function () {
+  describe("#createCommand", () => {
+    it("should return a Commander instance", async () => {
+      const pluginService = sinon.createStubInstance(PluginService);
+      const outputService = new OutputService();
+      let logstub = { info: () => {} };
+      const obj = new PluginCommand(logstub, outputService, pluginService);
+      assert.ok(obj.createCommand() instanceof Command);
+    });
+  });
   describe("#install", function () {
     it("should install the plugin", async function () {
       const pluginService = sinon.createStubInstance(PluginService);

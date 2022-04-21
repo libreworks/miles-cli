@@ -1,11 +1,20 @@
 const assert = require("assert");
 const sinon = require("sinon");
+const { Command } = require("commander");
 const ConfigCommand = require("../../lib/config/command");
 const ConfigService = require("../../lib/config/service");
 const OutputService = require("../../lib/io/output-service");
 const Yaml = require("../../lib/io/yaml");
 
 describe("ConfigCommand", function () {
+  describe("#createCommand", () => {
+    it("should return a Commander instance", async () => {
+      const configService = new ConfigService();
+      const outputService = new OutputService();
+      const obj = new ConfigCommand(configService, outputService);
+      assert.ok(obj.createCommand() instanceof Command);
+    });
+  });
   describe("#get", function () {
     it("should call the get method", async function () {
       const configService = new ConfigService();
