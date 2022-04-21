@@ -9,6 +9,7 @@ const { createLogger } = require("./lib/io/logs");
 const OutputService = require("./lib/io/output-service");
 const { registerCommands } = require("./lib/commander");
 const { Builder } = require("./lib/container");
+const { CognitoAuthAdapter } = require("./lib/auth/cognito/adapter");
 const AuthService = require("./lib/auth/service");
 const AuthCommand = require("./lib/auth/command");
 const ConfigCommand = require("./lib/config/command");
@@ -142,14 +143,17 @@ class Miles {
       "secret.service",
       async () => await SecretService.create(this.configDir)
     );
-    builder.register("auth.service", AuthService.create);
-    builder.register("auth.command", AuthCommand.create, ["commander-visitor"]);
     builder.register("config.command", ConfigCommand.create, [
       "commander-visitor",
     ]);
     builder.register("plugin.command", PluginCommand.create, [
       "commander-visitor",
     ]);
+    builder.register("auth.adapter.cognito", CognitoAuthAdapter.create, [
+      "auth-adapter",
+    ]);
+    builder.register("auth.service", AuthService.create);
+    builder.register("auth.command", AuthCommand.create, ["commander-visitor"]);
 
     return await builder.build();
   }
