@@ -1,6 +1,7 @@
 const assert = require("assert");
 const sinon = require("sinon");
 const {
+  createEmptyValidator,
   createRegExpValidator,
   Prompt,
   YesNoPrompt,
@@ -20,15 +21,10 @@ describe("Prompt", () => {
         "/^[a-z]+$/",
         "Lowercase letters only"
       );
-      assert.throws(
-        () => {
-          validator(1);
-        },
-        {
-          name: "Error",
-          message: "Lowercase letters only",
-        }
-      );
+      assert.throws(() => validator(1), {
+        name: "Error",
+        message: "Lowercase letters only",
+      });
     });
     it("should use the default filter", async () => {
       const validator = createRegExpValidator(/^[0-9]+$/, "Numbers only");
@@ -37,6 +33,31 @@ describe("Prompt", () => {
     it("should use the supplied filter", async () => {
       const validator = createRegExpValidator(/^[0-9]+$/, "Numbers only", (v) =>
         parseInt(v)
+      );
+      assert.strictEqual(validator("123"), 123);
+    });
+  });
+  describe("#createEmptyValidator", () => {
+    it("should return a function", async () => {
+      const validator = createEmptyValidator("Empty values are not allowed");
+      assert.strictEqual(typeof validator, "function");
+    });
+    it("should fail appropriately", async () => {
+      const errorMessage = "Empty values are not allowed";
+      const validator = createEmptyValidator(errorMessage);
+      assert.throws(() => validator(""), {
+        name: "Error",
+        message: errorMessage,
+      });
+    });
+    it("should use the default filter", async () => {
+      const validator = createEmptyValidator("Empty values are not allowed");
+      assert.strictEqual(validator("123"), "123");
+    });
+    it("should use the supplied filter", async () => {
+      const validator = createEmptyValidator(
+        "Empty values are not allowed",
+        (v) => parseInt(v)
       );
       assert.strictEqual(validator("123"), 123);
     });
