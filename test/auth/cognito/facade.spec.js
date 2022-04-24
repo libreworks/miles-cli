@@ -3,7 +3,7 @@ const sinon = require("sinon");
 const {
   CognitoUserPool,
   CognitoUser,
-  AuthenticationDetails,
+  CognitoUserSession,
 } = require("amazon-cognito-identity-js");
 const { CognitoStorage } = require("../../../lib/auth/cognito/storage");
 const { CognitoFacade } = require("../../../lib/auth/cognito/facade");
@@ -160,6 +160,23 @@ describe("CognitoFacade", () => {
       );
       assert.strictEqual(result, facadeResult);
     });
+    it("should resolve to a result without attributes object", async () => {
+      const cognitoUser = sinon.createStubInstance(CognitoUser);
+      cognitoUser.completeNewPasswordChallenge.callsFake(
+        (password, attributes, callbackObject) => {}
+      );
+      const userPool = sinon.createStubInstance(CognitoUserPool);
+      const cognitoStorage = new CognitoStorage();
+      const obj = new CognitoFacade(userPool, cognitoStorage);
+      const password = "Password123";
+      const attributes = ["username"];
+      const facadeResult = { incomplete: true };
+      sinon
+        .stub(obj, "createCallbackObject")
+        .callsFake((user, resolve, reject) => resolve(facadeResult));
+      const result = await obj.confirmNewPassword(cognitoUser, password);
+      assert.deepEqual(result, facadeResult);
+    });
   });
   describe("#confirmPasswordReset", () => {
     it("should return a Promise", async () => {
@@ -202,6 +219,128 @@ describe("CognitoFacade", () => {
         password
       );
       assert.strictEqual(result, facadeResult);
+    });
+  });
+  describe("#createCallbackObject", () => {
+    it("should return an object with function values", async () => {
+      const cognitoUser = sinon.createStubInstance(CognitoUser);
+      const obj = new CognitoFacade(null, null);
+      const callbackObject = obj.createCallbackObject(
+        cognitoUser,
+        () => {},
+        () => {}
+      );
+      assert.ok(typeof callbackObject === "object");
+      for (const key of [
+        "onSuccess",
+        "onFailure",
+        "newPasswordRequired",
+        "mfaRequired",
+        "totpRequired",
+        "customChallenge",
+        "mfaSetup",
+        "selectMFAType",
+      ]) {
+        assert.ok(typeof callbackObject[key] === "function");
+      }
+    });
+    it("should resolve a facade result on success", async () => {
+      const cognitoUser = sinon.createStubInstance(CognitoUser);
+      const session = sinon.createStubInstance(CognitoUserSession);
+      cognitoUser.username = "foobar";
+      const obj = new CognitoFacade(null, null);
+      const promise = new Promise((resolve, reject) => {
+        const callback = obj.createCallbackObject(cognitoUser, resolve, reject);
+        callback.onSuccess(session, false);
+      });
+      const facadeResult = await promise;
+      assert.deepEqual(facadeResult, {
+        incomplete: false,
+        user: cognitoUser,
+        username: "foobar",
+        session,
+      });
+    });
+    it("should resolve a facade result in common scenarios", async () => {
+      const challengeName = "FOOBAR_CHALLENGE";
+      const challengeParams = { foo: "bar" };
+      const cognitoUser = sinon.createStubInstance(CognitoUser);
+      const obj = new CognitoFacade(null, null);
+      const promise = new Promise((resolve, reject) => {
+        const callback = obj.createCallbackObject(cognitoUser, resolve, reject);
+        callback.mfaRequired(challengeName, challengeParams);
+      });
+      const facadeResult = await promise;
+      assert.deepEqual(facadeResult, {
+        incomplete: true,
+        challenge: true,
+        name: challengeName,
+        parameters: challengeParams,
+        user: cognitoUser,
+      });
+    });
+    it("should resolve a facade result for custom challenges", async () => {
+      const challengeParams = { foo: "bar" };
+      const cognitoUser = sinon.createStubInstance(CognitoUser);
+      const obj = new CognitoFacade(null, null);
+      const promise = new Promise((resolve, reject) => {
+        const callback = obj.createCallbackObject(cognitoUser, resolve, reject);
+        callback.customChallenge(challengeParams);
+      });
+      const facadeResult = await promise;
+      assert.deepEqual(facadeResult, {
+        incomplete: true,
+        challenge: true,
+        name: "CUSTOM_CHALLENGE",
+        parameters: challengeParams,
+        user: cognitoUser,
+      });
+    });
+    it("should resolve a facade result for new password required", async () => {
+      const userAttributes = { foo: "bar" };
+      const requiredAttributes = ["username"];
+      const cognitoUser = sinon.createStubInstance(CognitoUser);
+      const obj = new CognitoFacade(null, null);
+      const promise = new Promise((resolve, reject) => {
+        const callback = obj.createCallbackObject(cognitoUser, resolve, reject);
+        callback.newPasswordRequired(userAttributes, requiredAttributes);
+      });
+      const facadeResult = await promise;
+      assert.deepEqual(facadeResult, {
+        incomplete: true,
+        challenge: true,
+        name: "NEW_PASSWORD_REQUIRED",
+        requiredAttributes,
+        user: cognitoUser,
+      });
+    });
+    it("should resolve a facade result for password reset", async () => {
+      const cognitoUser = sinon.createStubInstance(CognitoUser);
+      const obj = new CognitoFacade(null, null);
+      const err = { name: "PasswordResetRequiredException" };
+      const promise = new Promise((resolve, reject) => {
+        const callback = obj.createCallbackObject(cognitoUser, resolve, reject);
+        callback.onFailure(err);
+      });
+      const facadeResult = await promise;
+      assert.deepEqual(facadeResult, {
+        incomplete: true,
+        challenge: true,
+        name: "PASSWORD_RESET_REQUIRED",
+        user: cognitoUser,
+      });
+    });
+    it("should reject with errors", async () => {
+      const cognitoUser = sinon.createStubInstance(CognitoUser);
+      const obj = new CognitoFacade(null, null);
+      const err = new Error("Something went wrong");
+      const promise = new Promise((resolve, reject) => {
+        const callback = obj.createCallbackObject(cognitoUser, resolve, reject);
+        callback.onFailure(err);
+      });
+      await assert.rejects(async () => {
+        await promise;
+      }, err);
     });
   });
 });

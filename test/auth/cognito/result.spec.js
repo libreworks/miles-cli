@@ -93,6 +93,27 @@ describe("CognitoChallenge", () => {
         }
       );
     });
+    it("should error for weird results", async () => {
+      const username = "foobar";
+      const facade = sinon.createStubInstance(CognitoFacade);
+      const user = { username };
+      const facadeResult = {
+        incomplete: true,
+        challenge: false,
+        name: "WHAT",
+        user,
+      };
+      const obj = new CognitoChallenge(facade);
+      assert.throws(
+        () => {
+          obj.processCognitoResult(facadeResult);
+        },
+        {
+          name: "Error",
+          message: "Unknown result: neither complete nor a challenge",
+        }
+      );
+    });
   });
 });
 
