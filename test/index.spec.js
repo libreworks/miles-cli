@@ -7,13 +7,6 @@ const ora = require("ora");
 const xdg = require("@folder/xdg");
 const Config = require("../lib/config/value-set");
 const { Container } = require("../lib/container");
-const OutputService = require("../lib/io/output-service");
-const Yaml = require("../lib/io/yaml");
-const ConfigService = require("../lib/config/service");
-const SecretService = require("../lib/secret/service");
-const PluginService = require("../lib/plugin/service");
-const ActivationSet = require("../lib/plugin/activation-set");
-const PluginManager = require("../lib/plugin/manager");
 const Miles = require("../");
 
 describe("Miles", function () {
